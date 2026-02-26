@@ -1,0 +1,509 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SocietyStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SocietyRole {
+  OWNER
+  ADMIN
+  STAFF
+  READ_ONLY
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  APPROVED
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+enum EmailApprovalStatus {
+  DRAFT
+  APPROVED
+  SENT
+  CANCELLED
+}
+
+enum EmailSendStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum MeetingType {
+  BOARD
+  COMMITTEE
+  OTHER
+}
+
+enum MeetingStatus {
+  DRAFT
+  SCHEDULED
+  DONE
+}
+
+enum AttendanceStatus {
+  YES
+  NO
+  MAYBE
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+enum ArchiveCategory {
+  JOURNAL
+  NOTICE
+  OTHER
+}
+
+enum ShipmentType {
+  JOURNAL
+  NOTICE
+}
+
+enum ShipmentRecipientStatus {
+  QUEUED
+  SENT
+  RETURNED
+}
+
+enum AuditResourceType {
+  SOCIETY
+  SOCIETY_PLAN
+  SOCIETY_MEMBER
+  MEMBER
+  INVOICE
+  RECEIPT
+  EMAIL_TEMPLATE
+  EMAIL_APPROVAL
+  EMAIL_SEND_LOG
+  MEETING
+  ATTENDANCE
+  MEETING_DOCUMENT
+  MINUTES
+  TASK
+  DECISION
+  ARCHIVE
+  SHIPMENT_BATCH
+  SHIPMENT_RECIPIENT
+  PLAN_CHANGE
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  name         String
+  passwordHash String
+  status       UserStatus     @default(ACTIVE)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  societies    SocietyMember[]
+  uploadedDocs MeetingDocument[] @relation("MeetingDocumentUploader")
+  auditLogs    AuditLog[]
+  shipments    ShipmentBatch[] @relation("ShipmentCreatedBy")
+}
+
+model Society {
+  id            String            @id @default(cuid())
+  name          String
+  shortName     String
+  contactEmail  String
+  billingEmail  String
+  status        SocietyStatus     @default(ACTIVE)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  plan          SocietyPlan?
+  members       Member[]
+  invoices      Invoice[]
+  templates     EmailTemplate[]
+  emailApprovals EmailApproval[]
+  emailLogs     EmailSendLog[]
+  meetings      Meeting[]
+  archives      Archive[]
+  shipmentBatches ShipmentBatch[]
+  staff         SocietyMember[]
+  auditLogs     AuditLog[]
+  emailThreads  EmailThread[]
+  emailMessages EmailMessage[]
+}
+
+model SocietyPlan {
+  id                String   @id @default(cuid())
+  societyId          String   @unique
+  planName           String
+  electionSupport    Boolean  @default(false)
+  shipmentSupport    Boolean  @default(false)
+  committeeSupport   Boolean  @default(false)
+  accountingSupport  Boolean  @default(false)
+  monthlyFee         Int
+  startDate          DateTime
+  endDate            DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  society            Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+}
+
+model SocietyMember {
+  id        String     @id @default(cuid())
+  userId    String
+  societyId String
+  role      SocietyRole
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  society   Society    @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, societyId])
+  @@index([societyId])
+}
+
+model Member {
+  id          String       @id @default(cuid())
+  societyId    String
+  memberNo     String
+  name         String
+  kana         String?
+  affiliation  String
+  address      String
+  email        String
+  phone        String?
+  memberType   String
+  position     String?
+  status       MemberStatus @default(ACTIVE)
+  joinedAt     DateTime
+  leftAt       DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  society      Society      @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  invoices     Invoice[]
+  attendances  Attendance[]
+  emailMessages EmailMessage[]
+  shipmentRecipients ShipmentRecipient[]
+
+  @@unique([societyId, memberNo])
+  @@index([societyId, status])
+  @@index([societyId, email])
+}
+
+model Invoice {
+  id            String         @id @default(cuid())
+  societyId      String
+  memberId       String
+  fiscalYear     Int
+  status         InvoiceStatus  @default(DRAFT)
+  amount         Int
+  dueDate        DateTime
+  sentAt         DateTime?
+  paidAt         DateTime?
+  paymentMethod  PaymentMethod?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  society        Society        @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  member         Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  receipt        Receipt?
+  emailLogs      EmailSendLog[]
+  emailMessages  EmailMessage[]
+
+  @@unique([societyId, memberId, fiscalYear])
+  @@index([societyId, fiscalYear, status])
+}
+
+model Receipt {
+  id            String   @id @default(cuid())
+  societyId      String
+  invoiceId      String   @unique
+  receiptNo      String
+  filePath       String
+  issuedAt       DateTime @default(now())
+  society        Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([societyId, receiptNo])
+  @@index([societyId])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  societyId  String
+  key       String
+  name      String
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  society   Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@unique([societyId, key])
+  @@index([societyId])
+}
+
+model EmailApproval {
+  id             String              @id @default(cuid())
+  societyId       String
+  templateKey     String
+  title           String
+  status          EmailApprovalStatus @default(DRAFT)
+  filterJson      Json?
+  scheduledAt     DateTime?
+  approvedByUserId String?
+  approvedAt      DateTime?
+  sentAt          DateTime?
+  createdByUserId String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  society         Society             @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  recipients      EmailSendLog[]
+
+  @@index([societyId, status])
+}
+
+model EmailSendLog {
+  id                String          @id @default(cuid())
+  societyId          String
+  emailApprovalId    String
+  templateKey        String?
+  to                 String
+  subject            String
+  bodyRendered       String
+  status             EmailSendStatus @default(QUEUED)
+  providerMessageId  String?
+  sentAt             DateTime?
+  errorMessage       String?
+  memberId           String?
+  invoiceId          String?
+  createdAt          DateTime        @default(now())
+  society            Society         @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  approval           EmailApproval   @relation(fields: [emailApprovalId], references: [id], onDelete: Cascade)
+  member             Member?         @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  invoice            Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([societyId, status])
+  @@index([memberId])
+  @@index([invoiceId])
+}
+
+model EmailThread {
+  id               String   @id @default(cuid())
+  societyId         String
+  provider          String   @default("gmail")
+  providerThreadId  String
+  subject           String?
+  linkedMemberId    String?
+  linkedInvoiceId   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  society           Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  messages          EmailMessage[]
+
+  @@unique([societyId, provider, providerThreadId])
+  @@index([societyId])
+}
+
+model EmailMessage {
+  id                String   @id @default(cuid())
+  societyId          String
+  emailThreadId      String?
+  direction          String   // outgoing|incoming
+  providerMessageId  String?
+  subject            String?
+  fromAddress        String?
+  toAddress          String?
+  bodyText           String?
+  bodyHtml           String?
+  sentAt             DateTime?
+  receivedAt         DateTime?
+  memberId           String?
+  invoiceId          String?
+  rawHeaders         Json?
+  createdAt          DateTime @default(now())
+  society            Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  thread             EmailThread? @relation(fields: [emailThreadId], references: [id], onDelete: SetNull)
+  member             Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  invoice            Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([societyId, direction])
+  @@index([emailThreadId])
+}
+
+model Meeting {
+  id          String       @id @default(cuid())
+  societyId    String
+  title       String
+  type        MeetingType
+  scheduledAt DateTime
+  location    String?
+  onlineUrl   String?
+  agenda      String?
+  status      MeetingStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  society     Society       @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  attendances Attendance[]
+  documents   MeetingDocument[]
+  minutes     Minutes?
+  tasks       Task[]
+  decisions   Decision[]
+
+  @@index([societyId, scheduledAt])
+}
+
+model Attendance {
+  id           String            @id @default(cuid())
+  meetingId     String
+  memberId      String?
+  externalName  String?
+  status        AttendanceStatus
+  note          String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  meeting       Meeting           @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  member        Member?           @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([meetingId])
+  @@index([memberId])
+}
+
+model MeetingDocument {
+  id          String   @id @default(cuid())
+  meetingId    String
+  title       String
+  version     Int
+  fileUrl     String
+  uploadedById String
+  uploadedAt  DateTime @default(now())
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  uploadedBy  User     @relation("MeetingDocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([meetingId])
+  @@unique([meetingId, title, version])
+}
+
+model Minutes {
+  id         String   @id @default(cuid())
+  meetingId   String   @unique
+  minutesText String
+  updatedAt   DateTime @updatedAt
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id         String    @id @default(cuid())
+  meetingId   String
+  title      String
+  assignee    String?
+  dueDate    DateTime?
+  status     TaskStatus @default(OPEN)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  meeting    Meeting    @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, status])
+}
+
+model Decision {
+  id         String   @id @default(cuid())
+  meetingId   String
+  decidedAt  DateTime
+  title      String
+  detail     String?
+  decidedBy  String?
+  createdAt  DateTime @default(now())
+  meeting    Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, decidedAt])
+}
+
+model Archive {
+  id          String          @id @default(cuid())
+  societyId    String
+  category    ArchiveCategory
+  title       String
+  issueNo     String?
+  publishedAt DateTime?
+  fileUrl     String
+  tags        String[]
+  note        String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  society     Society         @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId, category])
+  @@index([societyId, issueNo])
+}
+
+model ShipmentBatch {
+  id          String       @id @default(cuid())
+  societyId    String
+  type        ShipmentType
+  title       String?
+  createdAt   DateTime     @default(now())
+  createdById String
+  society     Society      @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  createdBy   User         @relation("ShipmentCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  recipients  ShipmentRecipient[]
+
+  @@index([societyId, createdAt])
+}
+
+model ShipmentRecipient {
+  id              String                 @id @default(cuid())
+  batchId          String
+  memberId         String
+  addressSnapshot  String
+  status           ShipmentRecipientStatus @default(QUEUED)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  batch            ShipmentBatch           @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  member           Member                  @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  @@unique([batchId, memberId])
+  @@index([batchId, status])
+}
+
+model AuditLog {
+  id            String            @id @default(cuid())
+  societyId      String?
+  actorUserId    String?
+  resourceType   AuditResourceType
+  resourceId     String
+  action         String
+  beforeJson     Json?
+  afterJson      Json?
+  metaJson       Json?
+  createdAt      DateTime          @default(now())
+  society        Society?          @relation(fields: [societyId], references: [id], onDelete: SetNull)
+  actor          User?             @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([societyId, resourceType, resourceId, createdAt])
+  @@index([actorUserId])
+}
