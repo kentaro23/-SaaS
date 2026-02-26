@@ -54,7 +54,7 @@ export default async function InvoicesPage({
           <form action={doMarkOverdue}>
             <Button>期限超過を OVERDUE に更新</Button>
           </form>
-          <p className="mt-2 text-xs text-slate-500">`dueDate < today` かつ `APPROVED/SENT` の請求が対象です。</p>
+          <p className="mt-2 text-xs text-slate-500">`dueDate &lt; today` かつ `APPROVED/SENT` の請求が対象です。</p>
         </Card>
       </div>
 
