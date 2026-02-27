@@ -17,7 +17,7 @@ export default function LoginPage() {
     const result = await signIn("credentials", {
       email,
       password,
-      callbackUrl: "/",
+      callbackUrl: "/admin/societies",
       redirect: true,
     });
     if (result?.error) {
