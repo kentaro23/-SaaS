@@ -15,7 +15,7 @@ export default async function AdminSocietiesPage() {
         <Table>
           <thead>
             <tr>
-              <Th>学会</Th><Th>状態</Th><Th>連絡先</Th><Th>プラン</Th><Th>件数</Th><Th></Th>
+              <Th>学会</Th><Th>状態</Th><Th>連絡先</Th><Th>プラン</Th><Th>件数</Th><Th>導線</Th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
@@ -37,7 +37,12 @@ export default async function AdminSocietiesPage() {
                   <div className="text-xs text-slate-600">請求 {s._count.invoices}</div>
                 </Td>
                 <Td className="text-right">
-                  <Link href={`/admin/societies/${s.id}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700">詳細</Link>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Link href={`/t/${s.id}`} className="rounded-lg bg-teal-700 px-3 py-1.5 text-sm text-white">運用画面</Link>
+                    <Link href={`/t/${s.id}/members`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700">会員</Link>
+                    <Link href={`/t/${s.id}/invoices`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700">請求</Link>
+                    <Link href={`/admin/societies/${s.id}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700">詳細</Link>
+                  </div>
                 </Td>
               </tr>
             ))}
