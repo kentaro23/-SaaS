@@ -145,6 +145,7 @@ model Society {
   plan          SocietyPlan?
   members       Member[]
   invoices      Invoice[]
+  receipts      Receipt[]
   templates     EmailTemplate[]
   emailApprovals EmailApproval[]
   emailLogs     EmailSendLog[]
@@ -206,6 +207,7 @@ model Member {
   society      Society      @relation(fields: [societyId], references: [id], onDelete: Cascade)
   invoices     Invoice[]
   attendances  Attendance[]
+  emailSendLogs EmailSendLog[]
   emailMessages EmailMessage[]
   shipmentRecipients ShipmentRecipient[]
 
