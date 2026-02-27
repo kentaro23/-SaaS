@@ -1,4 +1,4 @@
-import { loginAction } from "@/lib/actions";
+import { loginAction } from "@/lib/auth-actions";
 
 export default function LoginPage() {
   return (
