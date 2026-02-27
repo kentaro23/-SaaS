@@ -36,7 +36,7 @@ export default async function AdminSocietiesPage() {
                   <div className="text-xs text-slate-600">スタッフ {s._count.staff}</div>
                   <div className="text-xs text-slate-600">請求 {s._count.invoices}</div>
                 </Td>
-                <Td className="text-right">
+                <Td className="text-right align-middle">
                   <Link href={`/t/${s.id}`} className="rounded-lg bg-teal-700 px-3 py-1.5 text-sm text-white">運用画面</Link>
                 </Td>
               </tr>
