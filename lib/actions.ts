@@ -25,6 +25,7 @@ import {
   memberSchema,
   minutesSchema,
   shipmentBatchSchema,
+  societyMailSettingSchema,
   societyPlanSchema,
   societySchema,
   taskSchema,
@@ -118,6 +119,17 @@ export async function saveSocietyStaffAction(societyId: string, formData: FormDa
   revalidatePath(`/t/${societyId}/settings/members`);
 }
 
+export async function saveSocietyMailSettingsAction(societyId: string, formData: FormData) {
+  const { user } = await requireSocietyAccess(societyId, "ADMIN");
+  const parsed = societyMailSettingSchema.parse({
+    ...formDataToObject(formData),
+    smtpSecure: boolVal(formData, "smtpSecure"),
+  });
+  const repo = createTenantRepo({ societyId, actorUserId: user.id });
+  await repo.updateSocietyMailSettings(parsed as any);
+  revalidatePath(`/t/${societyId}/settings/mail`);
+}
+
 export async function saveMemberAction(societyId: string, formData: FormData) {
   const { user } = await requireSocietyAccess(societyId, "STAFF");
   const id = formData.get("id") ? String(formData.get("id")) : undefined;
@@ -197,7 +209,18 @@ export async function sendApprovedEmailAction(societyId: string, formData: FormD
   if (!approval) throw new Error("承認依頼が見つかりません");
   if (approval.status !== "APPROVED") throw new Error("Approved のみ送信可能です");
 
-  const provider = getMailProvider();
+  const mailSettings = await repo.getSocietyMailSettings();
+  const provider = getMailProvider({
+    mode: mailSettings?.mailProvider,
+    smtp: {
+      from: mailSettings?.mailFrom,
+      host: mailSettings?.smtpHost,
+      port: mailSettings?.smtpPort,
+      secure: mailSettings?.smtpSecure,
+      user: mailSettings?.smtpUser,
+      pass: mailSettings?.smtpPass,
+    },
+  });
   for (const row of approval.recipients) {
     if (row.status === "SENT") continue;
     const result = await provider.send({

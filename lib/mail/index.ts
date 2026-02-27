@@ -1,21 +1,18 @@
 import { ConsoleMailProvider } from "@/lib/mail/console-provider";
 import { GmailApiMailProvider } from "@/lib/mail/gmail-api-provider";
 import { SmtpMailProvider } from "@/lib/mail/smtp-provider";
-import type { MailProvider } from "@/lib/mail/types";
+import type { MailProvider, SmtpRuntimeConfig } from "@/lib/mail/types";
 
-let instance: MailProvider | null = null;
-
-export function getMailProvider(): MailProvider {
-  if (instance) return instance;
-  const mode = process.env.MAIL_PROVIDER ?? "console";
+export function getMailProvider(config?: {
+  mode?: string | null;
+  smtp?: SmtpRuntimeConfig;
+}): MailProvider {
+  const mode = config?.mode ?? process.env.MAIL_PROVIDER ?? "console";
   if (mode === "smtp") {
-    instance = new SmtpMailProvider();
-    return instance;
+    return new SmtpMailProvider(config?.smtp);
   }
   if (mode === "gmail_api") {
-    instance = new GmailApiMailProvider();
-    return instance;
+    return new GmailApiMailProvider();
   }
-  instance = new ConsoleMailProvider();
-  return instance;
+  return new ConsoleMailProvider();
 }

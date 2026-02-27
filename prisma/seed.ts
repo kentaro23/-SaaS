@@ -53,6 +53,13 @@ async function main() {
       shortName: "JSS",
       contactEmail: "office@jss.example.com",
       billingEmail: "billing@jss.example.com",
+      mailProvider: "smtp",
+      mailFrom: "jss-office@example.com",
+      smtpHost: "smtp.gmail.com",
+      smtpPort: 587,
+      smtpSecure: false,
+      smtpUser: "gakkaidaiko@gmail.com",
+      smtpPass: "replace-me",
       status: "ACTIVE",
     },
   });

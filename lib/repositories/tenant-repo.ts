@@ -463,6 +463,57 @@ export function createTenantRepo(ctx: TenantRepoContext) {
       return plan;
     },
 
+    async getSocietyMailSettings() {
+      return prisma.society.findUnique({
+        where: { id: societyId },
+        select: {
+          id: true,
+          mailProvider: true,
+          mailFrom: true,
+          smtpHost: true,
+          smtpPort: true,
+          smtpSecure: true,
+          smtpUser: true,
+          smtpPass: true,
+          gmailSender: true,
+        },
+      });
+    },
+
+    async updateSocietyMailSettings(input: {
+      mailProvider: string;
+      mailFrom?: string | null;
+      smtpHost?: string | null;
+      smtpPort?: number | null;
+      smtpSecure?: boolean;
+      smtpUser?: string | null;
+      smtpPass?: string | null;
+      gmailSender?: string | null;
+    }) {
+      const before = await prisma.society.findUniqueOrThrow({ where: { id: societyId } });
+      const society = await prisma.society.update({
+        where: { id: societyId },
+        data: {
+          mailProvider: input.mailProvider,
+          mailFrom: input.mailFrom || null,
+          smtpHost: input.smtpHost || null,
+          smtpPort: input.smtpPort ?? null,
+          smtpSecure: !!input.smtpSecure,
+          smtpUser: input.smtpUser || null,
+          smtpPass: input.smtpPass || null,
+          gmailSender: input.gmailSender || null,
+        },
+      });
+      await audit({
+        resourceType: "SOCIETY",
+        resourceId: society.id,
+        action: "update_mail_settings",
+        beforeJson: before as any,
+        afterJson: society as any,
+      });
+      return society;
+    },
+
     async listSocietyStaff() {
       return prisma.societyMember.findMany({
         where: { societyId },

@@ -139,6 +139,14 @@ model Society {
   shortName     String
   contactEmail  String
   billingEmail  String
+  mailProvider  String            @default("smtp")
+  mailFrom      String?
+  smtpHost      String?
+  smtpPort      Int?
+  smtpSecure    Boolean           @default(false)
+  smtpUser      String?
+  smtpPass      String?
+  gmailSender   String?
   status        SocietyStatus     @default(ACTIVE)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt

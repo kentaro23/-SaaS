@@ -11,12 +11,12 @@ export default async function MembersPage({
 }) {
   const { societyId } = await params;
   const sp = await searchParams;
-  const { repo } = await getTenantContext(societyId, "READ_ONLY");
+  const { repo, society } = await getTenantContext(societyId, "READ_ONLY");
   const members = await repo.listMembers({ q: sp.q, status: (sp.status as any) ?? "ALL" });
 
   return (
     <div className="space-y-5">
-      <PageTitle title="会員一覧" subtitle="会員マスター検索・編集" action={<Link href={`/t/${societyId}/members/new`} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">会員追加</Link>} />
+      <PageTitle title="会員一覧" subtitle={`会員マスター検索・編集（${society.shortName}）`} action={<Link href={`/t/${societyId}/members/new`} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">会員追加</Link>} />
       <Card>
         <form className="grid gap-3 md:grid-cols-[1fr,180px,auto]">
           <input name="q" defaultValue={sp.q ?? ""} placeholder="氏名/会員番号/所属/メール" />

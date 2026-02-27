@@ -53,6 +53,17 @@ export const emailTemplateSchema = z.object({
   body: z.string().min(1),
 });
 
+export const societyMailSettingSchema = z.object({
+  mailProvider: z.enum(["smtp", "gmail_api", "console"]),
+  mailFrom: z.string().email().optional().or(z.literal("")).nullable(),
+  smtpHost: z.string().optional().or(z.literal("")).nullable(),
+  smtpPort: z.coerce.number().int().positive().optional().nullable(),
+  smtpSecure: z.coerce.boolean().optional().default(false),
+  smtpUser: z.string().optional().or(z.literal("")).nullable(),
+  smtpPass: z.string().optional().or(z.literal("")).nullable(),
+  gmailSender: z.string().email().optional().or(z.literal("")).nullable(),
+});
+
 export const emailApprovalCreateSchema = z.object({
   title: z.string().min(1),
   templateKey: z.string().min(1),
