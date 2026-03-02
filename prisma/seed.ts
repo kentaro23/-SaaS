@@ -49,7 +49,7 @@ async function main() {
 
   const society = await prisma.society.create({
     data: {
-      name: "日本サンプル学会",
+      name: "日本医学学会",
       shortName: "JSS",
       contactEmail: "office@jss.example.com",
       billingEmail: "billing@jss.example.com",
@@ -92,8 +92,8 @@ async function main() {
         memberNo: `M${String(i).padStart(4, "0")}`,
         name: `会員${i}`,
         kana: `カイイン${i}`,
-        affiliation: `サンプル大学 ${i}学部`,
-        address: `東京都サンプル区${i}-1-1 サンプルマンション${i}01`,
+        affiliation: `医療大学 ${i}学部`,
+        address: `東京都千代田区${i}-1-1 医学会ビル${i}01`,
         email: `member${i}@example.com`,
         phone: `090-0000-00${String(i).padStart(2, "0")}`,
         memberType: i <= 7 ? "正会員" : i <= 9 ? "準会員" : "賛助会員",
@@ -133,7 +133,7 @@ async function main() {
         key: "annual_invoice",
         name: "年会費請求",
         subject: "{{fiscalYear}}年度 年会費のご請求（{{memberName}} 様）",
-        body: "{{memberName}} 様\n\n{{fiscalYear}}年度の年会費 {{invoiceAmount}}円 のご請求です。\n支払期限: {{dueDate}}\n\n日本サンプル学会事務局",
+        body: "{{memberName}} 様\n\n{{fiscalYear}}年度の年会費 {{invoiceAmount}}円 のご請求です。\n支払期限: {{dueDate}}\n\n日本医学学会事務局",
       },
       {
         societyId: society.id,
@@ -209,8 +209,8 @@ async function main() {
 
   await prisma.archive.createMany({
     data: [
-      { societyId: society.id, category: "JOURNAL", title: "学会誌 Vol.12", issueNo: "12", publishedAt: new Date("2026-02-01"), fileUrl: "/uploads/demo/vol12.pdf", tags: ["journal", "vol12", "2026"], note: "特集号" },
-      { societyId: society.id, category: "NOTICE", title: "年次大会開催案内", issueNo: null, publishedAt: new Date("2026-01-20"), fileUrl: "/uploads/demo/notice-annual.pdf", tags: ["notice", "annual"], note: null },
+      { societyId: society.id, category: "JOURNAL", title: "学会誌 Vol.12", issueNo: "12", publishedAt: new Date("2026-02-01"), fileUrl: "/uploads/library/vol12.pdf", tags: ["journal", "vol12", "2026"], note: "特集号" },
+      { societyId: society.id, category: "NOTICE", title: "年次大会開催案内", issueNo: null, publishedAt: new Date("2026-01-20"), fileUrl: "/uploads/library/notice-annual.pdf", tags: ["notice", "annual"], note: null },
     ],
   });
 

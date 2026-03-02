@@ -356,7 +356,7 @@ export async function updateShipmentRecipientStatusAction(societyId: string, bat
   revalidatePath(`/t/${societyId}/shipments/${batchId}`);
 }
 
-export async function createDemoUserAction(formData: FormData) {
+export async function createStaffUserAction(formData: FormData) {
   const current = await requireUser();
   const email = String(formData.get("email") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();

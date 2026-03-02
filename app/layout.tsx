@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "学会事務局OS",
-  description: "学会運営代行向けSaaS MVP",
+  description: "学会運営代行向けSaaS",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

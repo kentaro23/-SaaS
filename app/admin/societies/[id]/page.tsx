@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { createSocietyAdminRepo } from "@/lib/repositories/society-admin-repo";
-import { assignSocietyStaffAdminAction, removeSocietyStaffAdminAction, updateSocietyAction, createDemoUserAction } from "@/lib/actions";
+import { assignSocietyStaffAdminAction, removeSocietyStaffAdminAction, updateSocietyAction, createStaffUserAction } from "@/lib/actions";
 import { Card, PageTitle, InputRow, SelectRow, Button, Table, Th, Td } from "@/components/ui";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
 
@@ -63,8 +63,8 @@ export default async function AdminSocietyDetailPage({ params }: { params: Promi
       </Card>
 
       <Card>
-        <h2 className="mb-3 font-semibold">社内ユーザ追加（デモ用）</h2>
-        <form action={createDemoUserAction} className="grid gap-3 md:grid-cols-3">
+        <h2 className="mb-3 font-semibold">社内ユーザ追加</h2>
+        <form action={createStaffUserAction} className="grid gap-3 md:grid-cols-3">
           <InputRow label="名前" name="name" required />
           <InputRow label="Email" name="email" type="email" required />
           <InputRow label="Password" name="password" type="text" required defaultValue="password123" />
