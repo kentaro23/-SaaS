@@ -68,6 +68,12 @@ export function createTenantRepo(ctx: TenantRepoContext) {
       });
     },
 
+    async findMemberByNo(memberNo: string) {
+      return prisma.member.findUnique({
+        where: { societyId_memberNo: { societyId, memberNo } },
+      });
+    },
+
     async upsertMember(input: Prisma.MemberUncheckedCreateInput & { id?: string }) {
       if (input.id) {
         const before = await prisma.member.findFirstOrThrow({ where: { id: input.id, societyId } });

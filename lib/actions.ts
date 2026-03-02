@@ -12,6 +12,7 @@ import { requireUser, requireSocietyAccess } from "@/lib/session";
 import { getMailProvider } from "@/lib/mail";
 import { buildReceiptPdf } from "@/lib/receipt-pdf";
 import { getUploadBaseDir, ensureDir } from "@/lib/files";
+import { parseMemberCsvRows } from "@/lib/member-import";
 import {
   archiveSchema,
   annualInvoiceGenerateSchema,
@@ -138,6 +139,47 @@ export async function saveMemberAction(societyId: string, formData: FormData) {
   await repo.upsertMember({ id, societyId, ...parsed } as any);
   revalidatePath(`/t/${societyId}/members`);
   if (id) revalidatePath(`/t/${societyId}/members/${id}`);
+}
+
+export async function importMembersCsvAction(societyId: string, formData: FormData) {
+  const { user } = await requireSocietyAccess(societyId, "STAFF");
+  const file = formData.get("csvFile");
+  if (!(file instanceof File)) throw new Error("CSVファイルを選択してください");
+
+  const text = await file.text();
+  const { rows, skipped } = parseMemberCsvRows(text);
+  const repo = createTenantRepo({ societyId, actorUserId: user.id });
+
+  let created = 0;
+  let updated = 0;
+  let skippedTotal = skipped;
+
+  for (const row of rows) {
+    const existing = await repo.findMemberByNo(row.memberNo);
+    await repo.upsertMember({
+      id: existing?.id,
+      societyId,
+      memberNo: row.memberNo,
+      name: row.name,
+      kana: row.kana ?? null,
+      affiliation: row.affiliation,
+      address: row.address,
+      email: row.email,
+      phone: row.phone ?? null,
+      memberType: row.memberType,
+      position: row.position ?? null,
+      status: row.status,
+      joinedAt: row.joinedAt,
+      leftAt: row.leftAt ?? null,
+    } as any);
+    if (existing) updated += 1;
+    else created += 1;
+  }
+
+  revalidatePath(`/t/${societyId}/members`);
+  redirect(
+    `/t/${societyId}/members?importCreated=${created}&importUpdated=${updated}&importSkipped=${skippedTotal}`,
+  );
 }
 
 export async function generateAnnualInvoicesAction(societyId: string, formData: FormData) {
