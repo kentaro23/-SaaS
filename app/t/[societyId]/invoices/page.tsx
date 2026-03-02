@@ -42,11 +42,22 @@ export default async function InvoicesPage({
       <div className="grid gap-5 xl:grid-cols-2">
         <Card>
           <h2 className="mb-3 font-semibold">年会費一括生成</h2>
-          <form action={annualAction} className="grid gap-3 md:grid-cols-4">
-            <label className="grid gap-1 text-sm"><span>年度</span><input name="fiscalYear" type="number" defaultValue={new Date().getFullYear()} required /></label>
-            <label className="grid gap-1 text-sm"><span>金額</span><input name="amount" type="number" defaultValue={10000} required /></label>
-            <label className="grid gap-1 text-sm"><span>支払期限</span><input name="dueDate" type="date" required /></label>
-            <div className="self-end"><Button>一括生成</Button></div>
+          <form action={annualAction} className="grid gap-3 md:grid-cols-2 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
+            <label className="grid min-w-0 gap-1 text-sm">
+              <span>年度</span>
+              <input className="w-full min-w-0" name="fiscalYear" type="number" defaultValue={new Date().getFullYear()} required />
+            </label>
+            <label className="grid min-w-0 gap-1 text-sm">
+              <span>金額</span>
+              <input className="w-full min-w-0" name="amount" type="number" defaultValue={10000} required />
+            </label>
+            <label className="grid min-w-0 gap-1 text-sm">
+              <span>支払期限</span>
+              <input className="w-full min-w-0" name="dueDate" type="date" required />
+            </label>
+            <div className="md:col-span-2 lg:col-span-1 lg:self-end">
+              <Button className="w-full lg:w-auto">一括生成</Button>
+            </div>
           </form>
         </Card>
         <Card>
