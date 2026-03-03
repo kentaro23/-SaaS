@@ -21,7 +21,16 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-5">
-      <PageTitle title="会員一覧" subtitle={`会員マスター検索・編集（${society.shortName}）`} action={<Link href={`/t/${societyId}/members/new`} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">会員追加</Link>} />
+      <PageTitle
+        title="会員一覧"
+        subtitle={`会員マスター検索・編集（${society.shortName}）`}
+        action={
+          <div className="flex gap-2">
+            <a href={`/t/${societyId}/members/export`} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">CSV出力</a>
+            <Link href={`/t/${societyId}/members/new`} className="rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white">会員追加</Link>
+          </div>
+        }
+      />
       {(sp.importCreated || sp.importUpdated || sp.importSkipped) ? (
         <Card>
           <p className="text-sm text-slate-700">

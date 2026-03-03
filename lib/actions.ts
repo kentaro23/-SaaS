@@ -48,6 +48,23 @@ function boolVal(formData: FormData, key: string) {
   return formData.get(key) === "on" || formData.get(key) === "true";
 }
 
+function ensureMailSettingsForSend(settings: {
+  mailProvider?: string | null;
+  mailFrom?: string | null;
+  smtpHost?: string | null;
+  smtpPort?: number | null;
+  smtpUser?: string | null;
+  smtpPass?: string | null;
+}) {
+  if (!settings.mailProvider) throw new Error("メール送信プロバイダが未設定です");
+  if (settings.mailProvider === "smtp") {
+    if (!settings.mailFrom) throw new Error("送信元アドレス（From）が未設定です");
+    if (!settings.smtpHost || !settings.smtpPort || !settings.smtpUser || !settings.smtpPass) {
+      throw new Error("SMTP設定が不足しています（Host/Port/User/Password）");
+    }
+  }
+}
+
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
@@ -129,6 +146,35 @@ export async function saveSocietyMailSettingsAction(societyId: string, formData:
   const repo = createTenantRepo({ societyId, actorUserId: user.id });
   await repo.updateSocietyMailSettings(parsed as any);
   revalidatePath(`/t/${societyId}/settings/mail`);
+}
+
+export async function sendMailSettingsTestAction(societyId: string, formData: FormData) {
+  const { user } = await requireSocietyAccess(societyId, "ADMIN");
+  const testTo = String(formData.get("testTo") ?? "").trim();
+  if (!testTo) throw new Error("テスト送信先メールアドレスを入力してください");
+
+  const repo = createTenantRepo({ societyId, actorUserId: user.id });
+  const mailSettings = await repo.getSocietyMailSettings();
+  ensureMailSettingsForSend(mailSettings ?? {});
+
+  const provider = getMailProvider({
+    mode: mailSettings?.mailProvider,
+    smtp: {
+      from: mailSettings?.mailFrom,
+      host: mailSettings?.smtpHost,
+      port: mailSettings?.smtpPort,
+      secure: mailSettings?.smtpSecure,
+      user: mailSettings?.smtpUser,
+      pass: mailSettings?.smtpPass,
+    },
+  });
+  const result = await provider.send({
+    to: testTo,
+    subject: `[学会事務局OS] メール送信設定テスト (${societyId})`,
+    text: `このメールは送信設定テストです。\n送信日時: ${new Date().toISOString()}\nsocietyId: ${societyId}`,
+  });
+  if (!result.ok) throw new Error(result.errorMessage ?? "テスト送信に失敗しました");
+  redirect(`/t/${societyId}/settings/mail?mailTest=ok`);
 }
 
 export async function saveMemberAction(societyId: string, formData: FormData) {
@@ -261,6 +307,7 @@ export async function sendApprovedEmailAction(societyId: string, formData: FormD
   if (approval.status !== "APPROVED") throw new Error("Approved のみ送信可能です");
 
   const mailSettings = await repo.getSocietyMailSettings();
+  ensureMailSettingsForSend(mailSettings ?? {});
   const provider = getMailProvider({
     mode: mailSettings?.mailProvider,
     smtp: {

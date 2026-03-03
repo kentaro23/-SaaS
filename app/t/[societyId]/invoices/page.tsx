@@ -41,7 +41,11 @@ export default async function InvoicesPage({
 
   return (
     <div className="space-y-5">
-      <PageTitle title="請求管理" subtitle="年会費請求 / ステータス更新 / 領収書発行" />
+      <PageTitle
+        title="請求管理"
+        subtitle="年会費請求 / ステータス更新 / 領収書発行"
+        action={<a href={`/t/${societyId}/invoices/export`} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">CSV出力</a>}
+      />
 
       <Card>
         <h2 className="mb-3 font-semibold">年会費一括生成</h2>
