@@ -30,6 +30,11 @@ export default async function AdminSocietyDetailPage({ params }: { params: Promi
           <InputRow label="略称" name="shortName" required defaultValue={society.shortName} />
           <InputRow label="連絡先メール" name="contactEmail" type="email" required defaultValue={society.contactEmail} />
           <InputRow label="請求先メール" name="billingEmail" type="email" required defaultValue={society.billingEmail} />
+          <InputRow label="会費体系" name="feeSystem" defaultValue={society.feeSystem ?? ""} />
+          <InputRow label="委員会頻度" name="committeeFrequency" defaultValue={society.committeeFrequency ?? ""} />
+          <InputRow label="担当者名" name="liaisonName" defaultValue={society.liaisonName ?? ""} />
+          <InputRow label="担当者メール" name="liaisonEmail" type="email" defaultValue={society.liaisonEmail ?? ""} />
+          <InputRow label="担当者電話" name="liaisonPhone" defaultValue={society.liaisonPhone ?? ""} />
           <SelectRow label="状態" name="status" defaultValue={society.status} options={societyStatusOptions} />
           <div className="md:col-span-2"><Button>更新</Button></div>
         </form>

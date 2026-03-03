@@ -137,7 +137,7 @@ export function createTenantRepo(ctx: TenantRepoContext) {
           ...(params.fiscalYear ? { fiscalYear: params.fiscalYear } : {}),
           ...(params.status && params.status !== "ALL" ? { status: params.status as any } : {}),
         },
-        include: { member: true, receipt: true },
+        include: { member: true, receipt: true, reminderLogs: { orderBy: { actedAt: "desc" }, take: 1 } },
         orderBy: [{ fiscalYear: "desc" }, { dueDate: "asc" }, { member: { memberNo: "asc" } }],
       });
     },
@@ -145,7 +145,12 @@ export function createTenantRepo(ctx: TenantRepoContext) {
     async getInvoice(invoiceId: string) {
       return prisma.invoice.findFirst({
         where: { id: invoiceId, societyId },
-        include: { member: true, receipt: true, emailLogs: { orderBy: { createdAt: "desc" } } },
+        include: {
+          member: true,
+          receipt: true,
+          emailLogs: { orderBy: { createdAt: "desc" } },
+          reminderLogs: { orderBy: { actedAt: "desc" } },
+        },
       });
     },
 
@@ -196,6 +201,8 @@ export function createTenantRepo(ctx: TenantRepoContext) {
           notes: input.notes ?? null,
           sentAt: input.status === "SENT" ? new Date() : before.sentAt,
           paidAt: input.status === "PAID" ? new Date() : input.status === "CANCELLED" ? null : before.paidAt,
+          reminderStage: input.status === "PAID" || input.status === "CANCELLED" ? "NONE" : before.reminderStage,
+          reminderUpdatedAt: input.status === "PAID" || input.status === "CANCELLED" ? new Date() : before.reminderUpdatedAt,
         },
       });
       await audit({
@@ -206,6 +213,42 @@ export function createTenantRepo(ctx: TenantRepoContext) {
         afterJson: invoice as any,
       });
       return invoice;
+    },
+
+    async updateInvoiceReminderStage(invoiceId: string, input: { stage: "NONE" | "FIRST" | "SECOND" | "FINAL"; note?: string | null }) {
+      const before = await prisma.invoice.findFirstOrThrow({ where: { id: invoiceId, societyId } });
+      const updated = await prisma.invoice.update({
+        where: { id: invoiceId },
+        data: { reminderStage: input.stage as any, reminderUpdatedAt: new Date() },
+      });
+      await prisma.invoiceReminderLog.create({
+        data: {
+          societyId,
+          invoiceId,
+          fromStage: before.reminderStage as any,
+          toStage: input.stage as any,
+          note: input.note ?? null,
+          actedByUserId: actorUserId ?? null,
+        },
+      });
+      await audit({
+        resourceType: "INVOICE",
+        resourceId: invoiceId,
+        action: "update_reminder_stage",
+        beforeJson: before as any,
+        afterJson: updated as any,
+        metaJson: { note: input.note ?? null } as any,
+      });
+      return updated;
+    },
+
+    async listReminderLogs(params?: { limit?: number }) {
+      return prisma.invoiceReminderLog.findMany({
+        where: { societyId },
+        include: { invoice: { include: { member: true } }, actedBy: true },
+        orderBy: { actedAt: "desc" },
+        take: params?.limit ?? 50,
+      });
     },
 
     async markOverdueInvoices() {
@@ -237,10 +280,94 @@ export function createTenantRepo(ctx: TenantRepoContext) {
           ...(filter.fiscalYear ? { fiscalYear: filter.fiscalYear } : {}),
           ...(filter.overdueOnly ? { OR: [{ status: "OVERDUE" }, { dueDate: { lt: new Date() } }] } : {}),
           ...(filter.invoiceStatus ? { status: filter.invoiceStatus as any } : {}),
+          status: { not: "PAID" },
           member: { email: { not: "" } },
         },
         include: { member: true },
         orderBy: [{ member: { memberNo: "asc" } }],
+      });
+    },
+
+    async generateMonthlyReport(year: number, month: number) {
+      const from = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+      const to = new Date(Date.UTC(year, month, 1, 0, 0, 0));
+
+      const [activeMemberCount, invoiceCount, overdueCount, unpaidCount, reminderFirstCount, reminderSecondCount, reminderFinalCount] =
+        await Promise.all([
+          prisma.member.count({ where: { societyId, status: "ACTIVE" } }),
+          prisma.invoice.count({ where: { societyId, createdAt: { gte: from, lt: to } } }),
+          prisma.invoice.count({ where: { societyId, status: "OVERDUE" } }),
+          prisma.invoice.count({ where: { societyId, status: { in: ["DRAFT", "APPROVED", "SENT", "OVERDUE"] } } }),
+          prisma.invoice.count({ where: { societyId, reminderStage: "FIRST" } }),
+          prisma.invoice.count({ where: { societyId, reminderStage: "SECOND" } }),
+          prisma.invoice.count({ where: { societyId, reminderStage: "FINAL" } }),
+        ]);
+
+      const invoiceSums = await prisma.invoice.aggregate({
+        where: { societyId, createdAt: { gte: from, lt: to } },
+        _sum: { amount: true },
+      });
+      const paidSums = await prisma.invoice.aggregate({
+        where: { societyId, paidAt: { gte: from, lt: to } },
+        _sum: { amount: true },
+      });
+
+      const report = await prisma.monthlyReport.upsert({
+        where: { societyId_year_month: { societyId, year, month } },
+        create: {
+          societyId,
+          year,
+          month,
+          activeMemberCount,
+          invoiceCount,
+          invoiceAmountTotal: invoiceSums._sum.amount ?? 0,
+          paidAmountTotal: paidSums._sum.amount ?? 0,
+          unpaidCount,
+          overdueCount,
+          reminderFirstCount,
+          reminderSecondCount,
+          reminderFinalCount,
+        },
+        update: {
+          generatedAt: new Date(),
+          activeMemberCount,
+          invoiceCount,
+          invoiceAmountTotal: invoiceSums._sum.amount ?? 0,
+          paidAmountTotal: paidSums._sum.amount ?? 0,
+          unpaidCount,
+          overdueCount,
+          reminderFirstCount,
+          reminderSecondCount,
+          reminderFinalCount,
+        },
+      });
+      await audit({
+        resourceType: "SOCIETY",
+        resourceId: societyId,
+        action: "generate_monthly_report",
+        metaJson: { year, month, reportId: report.id } as any,
+      });
+      return report;
+    },
+
+    async ensureCurrentMonthReport() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const existing = await prisma.monthlyReport.findUnique({
+        where: { societyId_year_month: { societyId, year, month } },
+      });
+      if (existing && now.getTime() - new Date(existing.generatedAt).getTime() < 24 * 60 * 60 * 1000) {
+        return existing;
+      }
+      return this.generateMonthlyReport(year, month);
+    },
+
+    async listMonthlyReports(limit = 12) {
+      return prisma.monthlyReport.findMany({
+        where: { societyId },
+        orderBy: [{ year: "desc" }, { month: "desc" }],
+        take: limit,
       });
     },
 

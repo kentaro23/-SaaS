@@ -13,6 +13,11 @@ export default function NewSocietyPage() {
           <InputRow label="略称" name="shortName" required />
           <InputRow label="連絡先メール" name="contactEmail" type="email" required />
           <InputRow label="請求先メール" name="billingEmail" type="email" required />
+          <InputRow label="会費体系" name="feeSystem" placeholder="例: 正会員10,000円 / 学生5,000円" />
+          <InputRow label="委員会頻度" name="committeeFrequency" placeholder="例: 月1回 / 四半期1回" />
+          <InputRow label="担当者名" name="liaisonName" />
+          <InputRow label="担当者メール" name="liaisonEmail" type="email" />
+          <InputRow label="担当者電話" name="liaisonPhone" />
           <SelectRow label="状態" name="status" defaultValue="ACTIVE" options={societyStatusOptions} />
           <div className="md:col-span-2"><Button>作成</Button></div>
         </form>

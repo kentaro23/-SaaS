@@ -5,6 +5,11 @@ export const societySchema = z.object({
   shortName: z.string().min(1),
   contactEmail: z.string().email(),
   billingEmail: z.string().email(),
+  feeSystem: z.string().optional().nullable(),
+  committeeFrequency: z.string().optional().nullable(),
+  liaisonName: z.string().optional().nullable(),
+  liaisonEmail: z.string().email().optional().or(z.literal("")).nullable(),
+  liaisonPhone: z.string().optional().nullable(),
   status: z.enum(["ACTIVE", "INACTIVE"]),
 });
 
@@ -44,6 +49,11 @@ export const invoiceUpdateSchema = z.object({
   status: z.enum(["DRAFT", "APPROVED", "SENT", "PAID", "OVERDUE", "CANCELLED"]),
   paymentMethod: z.enum(["BANK_TRANSFER", "CARD", "OTHER"]).optional().nullable(),
   notes: z.string().optional().nullable(),
+});
+
+export const invoiceReminderUpdateSchema = z.object({
+  stage: z.enum(["NONE", "FIRST", "SECOND", "FINAL"]),
+  note: z.string().optional().nullable(),
 });
 
 export const emailTemplateSchema = z.object({

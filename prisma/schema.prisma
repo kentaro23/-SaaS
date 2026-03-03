@@ -38,6 +38,13 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+enum ReminderStage {
+  NONE
+  FIRST
+  SECOND
+  FINAL
+}
+
 enum PaymentMethod {
   BANK_TRANSFER
   CARD
@@ -131,6 +138,7 @@ model User {
   uploadedDocs MeetingDocument[] @relation("MeetingDocumentUploader")
   auditLogs    AuditLog[]
   shipments    ShipmentBatch[] @relation("ShipmentCreatedBy")
+  reminderActions InvoiceReminderLog[]
 }
 
 model Society {
@@ -139,6 +147,11 @@ model Society {
   shortName     String
   contactEmail  String
   billingEmail  String
+  feeSystem     String?
+  committeeFrequency String?
+  liaisonName   String?
+  liaisonEmail  String?
+  liaisonPhone  String?
   mailProvider  String            @default("smtp")
   mailFrom      String?
   smtpHost      String?
@@ -164,6 +177,8 @@ model Society {
   auditLogs     AuditLog[]
   emailThreads  EmailThread[]
   emailMessages EmailMessage[]
+  monthlyReports MonthlyReport[]
+  invoiceReminderLogs InvoiceReminderLog[]
 }
 
 model SocietyPlan {
@@ -236,6 +251,8 @@ model Invoice {
   paidAt         DateTime?
   paymentMethod  PaymentMethod?
   notes          String?
+  reminderStage  ReminderStage   @default(NONE)
+  reminderUpdatedAt DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   society        Society        @relation(fields: [societyId], references: [id], onDelete: Cascade)
@@ -243,9 +260,48 @@ model Invoice {
   receipt        Receipt?
   emailLogs      EmailSendLog[]
   emailMessages  EmailMessage[]
+  reminderLogs   InvoiceReminderLog[]
 
   @@unique([societyId, memberId, fiscalYear])
   @@index([societyId, fiscalYear, status])
+}
+
+model InvoiceReminderLog {
+  id          String        @id @default(cuid())
+  societyId   String
+  invoiceId   String
+  fromStage   ReminderStage
+  toStage     ReminderStage
+  note        String?
+  actedByUserId String?
+  actedAt     DateTime      @default(now())
+  society     Society       @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  actedBy     User?         @relation(fields: [actedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([societyId, actedAt])
+  @@index([invoiceId, actedAt])
+}
+
+model MonthlyReport {
+  id                String   @id @default(cuid())
+  societyId         String
+  year              Int
+  month             Int
+  generatedAt       DateTime @default(now())
+  activeMemberCount Int
+  invoiceCount      Int
+  invoiceAmountTotal Int
+  paidAmountTotal   Int
+  unpaidCount       Int
+  overdueCount      Int
+  reminderFirstCount Int
+  reminderSecondCount Int
+  reminderFinalCount Int
+  society           Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@unique([societyId, year, month])
+  @@index([societyId, generatedAt])
 }
 
 model Receipt {

@@ -1,7 +1,14 @@
 import { getTenantContext } from "@/lib/tenant";
-import { generateAnnualInvoicesAction, generateReceiptAction, updateInvoiceAction, upsertEmailTemplateAction } from "@/lib/actions";
+import {
+  generateAnnualInvoicesAction,
+  generateMonthlyReportAction,
+  generateReceiptAction,
+  updateInvoiceAction,
+  updateInvoiceReminderStageAction,
+  upsertEmailTemplateAction,
+} from "@/lib/actions";
 import { PageTitle, Card, Table, Th, Td, Button, StatusBadge } from "@/components/ui";
-import { invoiceStatusLabel, invoiceStatusOptions, paymentMethodOptions } from "@/lib/labels";
+import { invoiceStatusLabel, invoiceStatusOptions, paymentMethodOptions, reminderStageLabel, reminderStageOptions } from "@/lib/labels";
 import { presetsByCategory } from "@/lib/email-template-presets";
 import { formatCurrencyJPY, formatDate } from "@/lib/utils";
 
@@ -18,9 +25,16 @@ export default async function InvoicesPage({
   const fiscalYear = sp.fiscalYear ? Number(sp.fiscalYear) : undefined;
   const status = sp.status ?? "ALL";
 
-  const [invoices, templates] = await Promise.all([repo.listInvoices({ fiscalYear, status }), repo.listEmailTemplates()]);
+  await repo.ensureCurrentMonthReport();
+  const [invoices, templates, monthlyReports] = await Promise.all([
+    repo.listInvoices({ fiscalYear, status }),
+    repo.listEmailTemplates(),
+    repo.listMonthlyReports(6),
+  ]);
   const annualAction = generateAnnualInvoicesAction.bind(null, societyId);
   const invoiceAction = updateInvoiceAction.bind(null, societyId);
+  const reminderAction = updateInvoiceReminderStageAction.bind(null, societyId);
+  const monthlyAction = generateMonthlyReportAction.bind(null, societyId);
   const presetTemplates = presetsByCategory("invoice");
   const templateByKey = new Map(templates.map((t) => [t.key, t]));
   const managedTemplates = [
@@ -69,6 +83,41 @@ export default async function InvoicesPage({
       </Card>
 
       <Card>
+        <h2 className="mb-3 font-semibold">月次レポート自動生成</h2>
+        <form action={monthlyAction} className="grid gap-3 md:grid-cols-[140px,120px,auto]">
+          <label className="grid gap-1 text-sm">
+            <span>年</span>
+            <input name="year" type="number" defaultValue={new Date().getFullYear()} required />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span>月</span>
+            <input name="month" type="number" min={1} max={12} defaultValue={new Date().getMonth() + 1} required />
+          </label>
+          <div className="self-end">
+            <Button variant="secondary">再生成</Button>
+          </div>
+        </form>
+        <div className="mt-4 overflow-auto">
+          <Table>
+            <thead><tr><Th>年月</Th><Th>請求件数</Th><Th>請求総額</Th><Th>入金総額</Th><Th>未納</Th><Th>期限超過</Th><Th>1次/2次/最終</Th></tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {monthlyReports.map((r) => (
+                <tr key={r.id}>
+                  <Td>{r.year}/{String(r.month).padStart(2, "0")}</Td>
+                  <Td>{r.invoiceCount}</Td>
+                  <Td>{formatCurrencyJPY(r.invoiceAmountTotal)}</Td>
+                  <Td>{formatCurrencyJPY(r.paidAmountTotal)}</Td>
+                  <Td>{r.unpaidCount}</Td>
+                  <Td>{r.overdueCount}</Td>
+                  <Td>{r.reminderFirstCount} / {r.reminderSecondCount} / {r.reminderFinalCount}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
+      </Card>
+
+      <Card>
         <form className="mb-4 grid gap-3 md:grid-cols-[160px,180px,auto]">
           <input type="number" name="fiscalYear" defaultValue={sp.fiscalYear ?? ""} placeholder="年度" />
           <select name="status" defaultValue={status}>
@@ -79,7 +128,7 @@ export default async function InvoicesPage({
         </form>
 
         <Table>
-          <thead><tr><Th>会員</Th><Th>年度</Th><Th>金額</Th><Th>期限</Th><Th>状態</Th><Th>更新</Th><Th>領収書</Th></tr></thead>
+          <thead><tr><Th>会員</Th><Th>年度</Th><Th>金額</Th><Th>期限</Th><Th>状態</Th><Th>督促</Th><Th>更新</Th><Th>領収書</Th></tr></thead>
           <tbody className="divide-y divide-slate-100">
             {invoices.map((inv) => (
               <tr key={inv.id}>
@@ -89,6 +138,17 @@ export default async function InvoicesPage({
                 <Td>{formatDate(inv.dueDate)}</Td>
                 <Td>
                   <StatusBadge tone={inv.status === "PAID" ? "green" : inv.status === "OVERDUE" ? "red" : inv.status === "SENT" ? "blue" : "yellow"}>{invoiceStatusLabel(inv.status)}</StatusBadge>
+                </Td>
+                <Td>
+                  <form action={reminderAction} className="grid gap-2">
+                    <input type="hidden" name="invoiceId" value={inv.id} />
+                    <select name="stage" defaultValue={inv.reminderStage} className="text-xs">
+                      {reminderStageOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                    <input name="note" placeholder="督促メモ" className="text-xs" defaultValue={inv.reminderLogs[0]?.note ?? ""} />
+                    <div className="text-xs text-slate-500">現在: {reminderStageLabel(inv.reminderStage)}</div>
+                    <Button variant="secondary">反映</Button>
+                  </form>
                 </Td>
                 <Td>
                   <form action={invoiceAction} className="grid gap-2">

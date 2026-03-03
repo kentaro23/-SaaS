@@ -30,6 +30,9 @@ export default async function AdminSocietiesPage() {
                 <Td>
                   <div>{s.contactEmail}</div>
                   <div className="text-xs text-slate-500">請求: {s.billingEmail}</div>
+                  <div className="mt-1 text-xs text-slate-500">会費体系: {s.feeSystem || "-"}</div>
+                  <div className="text-xs text-slate-500">委員会頻度: {s.committeeFrequency || "-"}</div>
+                  <div className="text-xs text-slate-500">担当: {s.liaisonName || "-"} {s.liaisonEmail ? `(${s.liaisonEmail})` : ""}</div>
                 </Td>
                 <Td>{s.plan ? `${s.plan.planName} / ${s.plan.monthlyFee.toLocaleString()}円` : "未設定"}</Td>
                 <Td>

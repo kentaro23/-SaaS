@@ -1,14 +1,19 @@
 import { getTenantContext } from "@/lib/tenant";
-import { approveEmailApprovalAction, createEmailApprovalAction, markOverdueAction, sendApprovedEmailAction, upsertEmailTemplateAction } from "@/lib/actions";
-import { Card, PageTitle, Button, StatusBadge } from "@/components/ui";
-import { emailApprovalStatusLabel, emailSendStatusLabel, invoiceStatusOptions } from "@/lib/labels";
+import { approveEmailApprovalAction, createEmailApprovalAction, markOverdueAction, sendApprovedEmailAction, updateInvoiceReminderStageAction, upsertEmailTemplateAction } from "@/lib/actions";
+import { Card, PageTitle, Button, StatusBadge, Table, Th, Td } from "@/components/ui";
+import { emailApprovalStatusLabel, emailSendStatusLabel, invoiceStatusLabel, invoiceStatusOptions, reminderStageLabel, reminderStageOptions } from "@/lib/labels";
 import { presetsByCategory } from "@/lib/email-template-presets";
 import { formatDateTime } from "@/lib/utils";
 
 export default async function RemindersPage({ params }: { params: Promise<{ societyId: string }> }) {
   const { societyId } = await params;
   const { repo } = await getTenantContext(societyId, "READ_ONLY");
-  const [templates, approvals] = await Promise.all([repo.listEmailTemplates(), repo.listEmailApprovals()]);
+  const [templates, approvals, overdueInvoices, reminderLogs] = await Promise.all([
+    repo.listEmailTemplates(),
+    repo.listEmailApprovals(),
+    repo.listInvoices({ status: "OVERDUE" }),
+    repo.listReminderLogs({ limit: 30 }),
+  ]);
   const presetTemplates = presetsByCategory("reminder");
   const templateByKey = new Map(templates.map((t) => [t.key, t]));
   const managedTemplates = [
@@ -60,6 +65,34 @@ export default async function RemindersPage({ params }: { params: Promise<{ soci
       </Card>
 
       <Card>
+        <h2 className="mb-3 font-semibold">督促ステータス管理（未払い→1次→2次→最終）</h2>
+        <Table>
+          <thead><tr><Th>会員</Th><Th>年度</Th><Th>請求状態</Th><Th>督促段階</Th><Th>更新</Th></tr></thead>
+          <tbody className="divide-y divide-slate-100">
+            {overdueInvoices.map((inv) => (
+              <tr key={inv.id}>
+                <Td>{inv.member.memberNo} {inv.member.name}</Td>
+                <Td>{inv.fiscalYear}</Td>
+                <Td>{invoiceStatusLabel(inv.status)}</Td>
+                <Td>{reminderStageLabel(inv.reminderStage)}</Td>
+                <Td>
+                  <form action={updateInvoiceReminderStageAction.bind(null, societyId)} className="grid gap-2 md:grid-cols-[160px,1fr,auto]">
+                    <input type="hidden" name="invoiceId" value={inv.id} />
+                    <select name="stage" defaultValue={inv.reminderStage} className="text-xs">
+                      {reminderStageOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                    <input name="note" placeholder="例: 2次督促メール送信済み" className="text-xs" />
+                    <Button variant="secondary">更新</Button>
+                  </form>
+                </Td>
+              </tr>
+            ))}
+            {overdueInvoices.length === 0 ? <tr><Td colSpan={5}>期限超過請求はありません。</Td></tr> : null}
+          </tbody>
+        </Table>
+      </Card>
+
+      <Card>
         <h2 className="mb-3 font-semibold">承認依頼一覧（督促）</h2>
         <div className="space-y-3">
           {targetApprovals.map((a) => (
@@ -98,6 +131,25 @@ export default async function RemindersPage({ params }: { params: Promise<{ soci
         ) : (
           <p className="text-sm text-slate-500">承認依頼を作成するとここにプレビューが表示されます。</p>
         )}
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 font-semibold">督促履歴（直近30件）</h2>
+        <Table>
+          <thead><tr><Th>日時</Th><Th>会員</Th><Th>変更</Th><Th>メモ</Th><Th>実行者</Th></tr></thead>
+          <tbody className="divide-y divide-slate-100">
+            {reminderLogs.map((log) => (
+              <tr key={log.id}>
+                <Td>{formatDateTime(log.actedAt)}</Td>
+                <Td>{log.invoice.member.memberNo} {log.invoice.member.name}</Td>
+                <Td>{reminderStageLabel(log.fromStage)} → {reminderStageLabel(log.toStage)}</Td>
+                <Td>{log.note || "-"}</Td>
+                <Td>{log.actedBy?.name ?? "system"}</Td>
+              </tr>
+            ))}
+            {reminderLogs.length === 0 ? <tr><Td colSpan={5}>履歴はありません。</Td></tr> : null}
+          </tbody>
+        </Table>
       </Card>
 
       <Card>

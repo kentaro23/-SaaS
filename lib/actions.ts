@@ -20,6 +20,7 @@ import {
   decisionSchema,
   emailApprovalCreateSchema,
   emailTemplateSchema,
+  invoiceReminderUpdateSchema,
   invoiceUpdateSchema,
   meetingDocumentSchema,
   meetingSchema,
@@ -46,6 +47,12 @@ function formDataToObject(formData: FormData) {
 
 function boolVal(formData: FormData, key: string) {
   return formData.get(key) === "on" || formData.get(key) === "true";
+}
+
+function nullableText(v: unknown) {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s.length ? s : null;
 }
 
 function ensureMailSettingsForSend(settings: {
@@ -80,7 +87,14 @@ export async function createSocietyAction(formData: FormData) {
   const user = await requireUser();
   const parsed = societySchema.parse(formDataToObject(formData));
   const repo = createSocietyAdminRepo(user.id);
-  await repo.createSociety(parsed);
+  await repo.createSociety({
+    ...parsed,
+    feeSystem: nullableText(parsed.feeSystem),
+    committeeFrequency: nullableText(parsed.committeeFrequency),
+    liaisonName: nullableText(parsed.liaisonName),
+    liaisonEmail: nullableText(parsed.liaisonEmail),
+    liaisonPhone: nullableText(parsed.liaisonPhone),
+  });
   revalidatePath("/admin/societies");
   redirect("/admin/societies");
 }
@@ -90,7 +104,14 @@ export async function updateSocietyAction(formData: FormData) {
   const id = String(formData.get("id"));
   const parsed = societySchema.parse(formDataToObject(formData));
   const repo = createSocietyAdminRepo(user.id);
-  await repo.updateSociety(id, parsed);
+  await repo.updateSociety(id, {
+    ...parsed,
+    feeSystem: nullableText(parsed.feeSystem),
+    committeeFrequency: nullableText(parsed.committeeFrequency),
+    liaisonName: nullableText(parsed.liaisonName),
+    liaisonEmail: nullableText(parsed.liaisonEmail),
+    liaisonPhone: nullableText(parsed.liaisonPhone),
+  });
   revalidatePath(`/admin/societies/${id}`);
   revalidatePath("/admin/societies");
 }
@@ -242,6 +263,29 @@ export async function updateInvoiceAction(societyId: string, formData: FormData)
   const parsed = invoiceUpdateSchema.parse(formDataToObject(formData));
   const repo = createTenantRepo({ societyId, actorUserId: user.id });
   await repo.updateInvoice(invoiceId, parsed);
+  revalidatePath(`/t/${societyId}/invoices`);
+}
+
+export async function updateInvoiceReminderStageAction(societyId: string, formData: FormData) {
+  const { user } = await requireSocietyAccess(societyId, "STAFF");
+  const invoiceId = String(formData.get("invoiceId"));
+  const parsed = invoiceReminderUpdateSchema.parse(formDataToObject(formData));
+  const repo = createTenantRepo({ societyId, actorUserId: user.id });
+  await repo.updateInvoiceReminderStage(invoiceId, { stage: parsed.stage as any, note: parsed.note });
+  revalidatePath(`/t/${societyId}/invoices`);
+  revalidatePath(`/t/${societyId}/reminders`);
+}
+
+export async function generateMonthlyReportAction(societyId: string, formData: FormData) {
+  const { user } = await requireSocietyAccess(societyId, "STAFF");
+  const year = Number(formData.get("year"));
+  const month = Number(formData.get("month"));
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    throw new Error("年月の指定が不正です");
+  }
+  const repo = createTenantRepo({ societyId, actorUserId: user.id });
+  await repo.generateMonthlyReport(year, month);
+  revalidatePath(`/t/${societyId}`);
   revalidatePath(`/t/${societyId}/invoices`);
 }
 

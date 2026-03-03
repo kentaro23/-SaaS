@@ -84,6 +84,13 @@ const EMAIL_SEND_STATUS = {
   FAILED: "失敗",
 } as const;
 
+const REMINDER_STAGE = {
+  NONE: "未督促",
+  FIRST: "1次督促",
+  SECOND: "2次督促",
+  FINAL: "最終督促",
+} as const;
+
 const MAIL_PROVIDER = {
   smtp: "SMTP",
   gmail_api: "Gmail API（準備中）",
@@ -163,6 +170,13 @@ export const mailProviderOptions: Option[] = [
   { value: "console", label: "コンソール（開発）" },
 ];
 
+export const reminderStageOptions: Option[] = [
+  { value: "NONE", label: "未督促" },
+  { value: "FIRST", label: "1次督促" },
+  { value: "SECOND", label: "2次督促" },
+  { value: "FINAL", label: "最終督促" },
+];
+
 export function societyStatusLabel(value: string | null | undefined) {
   return toLabel(value, SOCIETY_MEMBER_STATUS);
 }
@@ -225,4 +239,8 @@ export function emailSendStatusLabel(value: string | null | undefined) {
 
 export function mailProviderLabel(value: string | null | undefined) {
   return toLabel(value, MAIL_PROVIDER);
+}
+
+export function reminderStageLabel(value: string | null | undefined) {
+  return toLabel(value, REMINDER_STAGE);
 }
