@@ -72,7 +72,7 @@ export default async function MembersPage({
                 <Td><div>{m.memberType}</div><div className="text-xs text-slate-500">{m.affiliation}</div></Td>
                 <Td><div>{m.email}</div><div className="text-xs text-slate-500">{m.phone || "-"}</div></Td>
                 <Td><StatusBadge tone={m.status === "ACTIVE" ? "green" : "slate"}>{memberStatusLabel(m.status)}</StatusBadge></Td>
-                <Td className="text-right"><Link href={`/t/${societyId}/members/${m.id}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">詳細</Link></Td>
+                <Td className="align-middle text-right"><Link href={`/t/${societyId}/members/${m.id}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">詳細</Link></Td>
               </tr>
             ))}
           </tbody>
