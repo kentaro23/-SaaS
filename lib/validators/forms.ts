@@ -67,8 +67,10 @@ export const societyMailSettingSchema = z.object({
 export const emailApprovalCreateSchema = z.object({
   title: z.string().min(1),
   templateKey: z.string().min(1),
+  targetScope: z.enum(["INVOICE", "MEMBER"]).optional().default("INVOICE"),
   fiscalYear: z.coerce.number().int().optional().nullable(),
   invoiceStatus: z.string().optional().nullable(),
+  memberStatus: z.enum(["ACTIVE", "INACTIVE", "ALL"]).optional().default("ACTIVE"),
   overdueOnly: z.coerce.boolean().optional().default(false),
 });
 

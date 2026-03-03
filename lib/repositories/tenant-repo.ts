@@ -244,6 +244,17 @@ export function createTenantRepo(ctx: TenantRepoContext) {
       });
     },
 
+    async listMemberEmailTargets(filter: { memberStatus?: "ACTIVE" | "INACTIVE" | "ALL" }) {
+      return prisma.member.findMany({
+        where: {
+          societyId,
+          email: { not: "" },
+          ...(filter.memberStatus && filter.memberStatus !== "ALL" ? { status: filter.memberStatus } : {}),
+        },
+        orderBy: [{ status: "asc" }, { memberNo: "asc" }],
+      });
+    },
+
     async listEmailTemplates() {
       return prisma.emailTemplate.findMany({ where: { societyId }, orderBy: { key: "asc" } });
     },
@@ -358,6 +369,44 @@ export function createTenantRepo(ctx: TenantRepoContext) {
       const filter = (approval.filterJson ?? {}) as Record<string, any>;
       const template = await this.getEmailTemplate(approval.templateKey);
       if (!template) throw new Error("テンプレート未登録");
+      const targetScope = filter.targetScope === "MEMBER" ? "MEMBER" : "INVOICE";
+
+      if (targetScope === "MEMBER") {
+        const members = await this.listMemberEmailTargets({
+          memberStatus: (filter.memberStatus as "ACTIVE" | "INACTIVE" | "ALL" | undefined) ?? "ACTIVE",
+        });
+        let created = 0;
+        for (const member of members) {
+          const exists = await prisma.emailSendLog.findFirst({
+            where: { emailApprovalId: approval.id, memberId: member.id, invoiceId: null },
+          });
+          if (exists) continue;
+          const vars = {
+            memberName: member.name,
+            memberNo: member.memberNo,
+            fiscalYear: "",
+            invoiceAmount: "",
+            dueDate: "",
+            invoiceStatus: "",
+          };
+          await prisma.emailSendLog.create({
+            data: {
+              societyId,
+              emailApprovalId: approval.id,
+              templateKey: approval.templateKey,
+              to: member.email,
+              subject: renderTemplate(template.subject, vars),
+              bodyRendered: renderTemplate(template.body, vars),
+              status: "QUEUED",
+              memberId: member.id,
+              invoiceId: null,
+            },
+          });
+          created += 1;
+        }
+        return created;
+      }
+
       const invoices = await this.listInvoiceEmailTargets({
         fiscalYear: filter.fiscalYear ?? null,
         invoiceStatus: filter.invoiceStatus ?? null,

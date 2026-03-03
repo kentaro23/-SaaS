@@ -1,7 +1,7 @@
 import { getTenantContext } from "@/lib/tenant";
 import { approveEmailApprovalAction, createEmailApprovalAction, sendApprovedEmailAction, upsertEmailTemplateAction } from "@/lib/actions";
 import { Card, PageTitle, Button, StatusBadge } from "@/components/ui";
-import { emailApprovalStatusLabel, emailSendStatusLabel, invoiceStatusOptions } from "@/lib/labels";
+import { emailApprovalStatusLabel, emailSendStatusLabel } from "@/lib/labels";
 import { presetsByCategory } from "@/lib/email-template-presets";
 import { formatDateTime } from "@/lib/utils";
 
@@ -9,35 +9,56 @@ export default async function MailingsPage({ params }: { params: Promise<{ socie
   const { societyId } = await params;
   const { repo } = await getTenantContext(societyId, "READ_ONLY");
   const [templates, approvals] = await Promise.all([repo.listEmailTemplates(), repo.listEmailApprovals()]);
-  const presets = presetsByCategory("mailing");
-  const presetKeys = new Set(presets.map((p) => p.key));
+  const presetTemplates = presetsByCategory("mailing");
   const templateByKey = new Map(templates.map((t) => [t.key, t]));
-  const targetApprovals = approvals.filter((a) => presetKeys.has(a.templateKey));
+  const managedTemplates = [
+    ...presetTemplates.map((p) => {
+      const saved = templateByKey.get(p.key);
+      return {
+        id: saved?.id ?? `preset-${p.key}`,
+        key: p.key,
+        name: saved?.name ?? p.name,
+        subject: saved?.subject ?? p.subject,
+        body: saved?.body ?? p.body,
+      };
+    }),
+    ...templates
+      .filter((t) => t.key.startsWith("mailing_") && !presetTemplates.some((p) => p.key === t.key))
+      .map((t) => ({ id: t.id, key: t.key, name: t.name, subject: t.subject, body: t.body })),
+  ];
+  const approvalTemplates = new Set(managedTemplates.map((t) => t.key));
+  const targetApprovals = approvals.filter((a) => approvalTemplates.has(a.templateKey));
 
   return (
     <div className="space-y-5">
-      <PageTitle title="メール送信" subtitle="請求案内メールのプレビュー / 承認 / 送信" />
+      <PageTitle title="メール送信" subtitle="学会案内の一括配信（会員宛）" />
 
       <Card>
         <h2 className="mb-3 font-semibold">送信承認フロー作成</h2>
         <form action={createEmailApprovalAction.bind(null, societyId)} className="grid gap-3 md:grid-cols-2">
-          <label className="grid gap-1 text-sm"><span>タイトル</span><input name="title" placeholder="2026年度 年会費請求案内" required /></label>
+          <input type="hidden" name="targetScope" value="MEMBER" />
+          <label className="grid gap-1 text-sm"><span>タイトル</span><input name="title" placeholder="会員向け重要案内" required /></label>
           <label className="grid gap-1 text-sm">
             <span>テンプレート</span>
-            <select name="templateKey" defaultValue="annual_invoice">
-              {presets.map((p) => <option key={p.key} value={p.key}>{templateByKey.get(p.key)?.name ?? p.name}</option>)}
+            <select name="templateKey" defaultValue={managedTemplates[0]?.key ?? "mailing_general"}>
+              {managedTemplates.map((t) => <option key={t.id} value={t.key}>{t.name} ({t.key})</option>)}
             </select>
           </label>
-          <label className="grid gap-1 text-sm"><span>年度（任意）</span><input name="fiscalYear" type="number" placeholder="2026" /></label>
-          <label className="grid gap-1 text-sm"><span>請求状態（任意）</span><select name="invoiceStatus" defaultValue=""><option value="">指定なし</option>{invoiceStatusOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
-          <label className="flex items-center gap-2 text-sm md:col-span-2"><input name="overdueOnly" type="checkbox" className="h-4 w-4" />期限超過のみ抽出</label>
+          <label className="grid gap-1 text-sm">
+            <span>送信対象</span>
+            <select name="memberStatus" defaultValue="ACTIVE">
+              <option value="ACTIVE">有効会員のみ</option>
+              <option value="ALL">全会員</option>
+              <option value="INACTIVE">無効会員のみ</option>
+            </select>
+          </label>
           <div className="md:col-span-2"><Button>プレビュー作成（承認依頼起票）</Button></div>
         </form>
-        <p className="mt-3 text-xs text-slate-500">承認済みでないと送信できません。送信元は「設定: メール送信」の学会別設定が使われます。</p>
+        <p className="mt-3 text-xs text-slate-500">請求ステータスに依存せず会員へ送信します。承認済みでないと送信できません。</p>
       </Card>
 
       <Card>
-        <h2 className="mb-3 font-semibold">承認依頼一覧（請求案内）</h2>
+        <h2 className="mb-3 font-semibold">承認依頼一覧（メール送信）</h2>
         <div className="space-y-3">
           {targetApprovals.map((a) => (
             <div key={a.id} className="rounded-xl border border-slate-200 p-3">
@@ -78,20 +99,26 @@ export default async function MailingsPage({ params }: { params: Promise<{ socie
       </Card>
 
       <Card>
-        <h2 className="mb-3 font-semibold">テンプレート編集（請求案内）</h2>
+        <h2 className="mb-3 font-semibold">テンプレート管理（メール送信）</h2>
+        <form action={upsertEmailTemplateAction.bind(null, societyId)} className="mb-4 grid gap-2 rounded-xl border border-dashed border-slate-300 p-3">
+          <h3 className="text-sm font-medium">新規テンプレート追加</h3>
+          <label className="grid gap-1 text-sm"><span>テンプレートキー（`mailing_` で開始）</span><input name="key" placeholder="mailing_event_announce" required /></label>
+          <label className="grid gap-1 text-sm"><span>表示名</span><input name="name" placeholder="イベント案内" required /></label>
+          <label className="grid gap-1 text-sm"><span>件名</span><input name="subject" placeholder="学会からのお知らせ" required /></label>
+          <label className="grid gap-1 text-sm"><span>本文</span><textarea name="body" rows={4} required /></label>
+          <div><Button variant="secondary">追加</Button></div>
+        </form>
         <div className="grid gap-4">
-          {presets.map((p) => {
-            const current = templateByKey.get(p.key);
-            return (
-              <form key={p.key} action={upsertEmailTemplateAction.bind(null, societyId)} className="grid gap-2 rounded-xl border border-slate-200 p-3">
-                <input type="hidden" name="key" value={p.key} />
-                <label className="grid gap-1 text-sm"><span>表示名</span><input name="name" defaultValue={current?.name ?? p.name} required /></label>
-                <label className="grid gap-1 text-sm"><span>件名</span><input name="subject" defaultValue={current?.subject ?? p.subject} required /></label>
-                <label className="grid gap-1 text-sm"><span>本文</span><textarea name="body" rows={6} defaultValue={current?.body ?? p.body} required /></label>
-                <div><Button variant="secondary">テンプレート保存</Button></div>
-              </form>
-            );
-          })}
+          {managedTemplates.map((t) => (
+            <form key={t.id} action={upsertEmailTemplateAction.bind(null, societyId)} className="grid gap-2 rounded-xl border border-slate-200 p-3">
+              <input type="hidden" name="key" value={t.key} />
+              <label className="grid gap-1 text-sm"><span>表示名</span><input name="name" defaultValue={t.name} required /></label>
+              <label className="grid gap-1 text-sm"><span>件名</span><input name="subject" defaultValue={t.subject} required /></label>
+              <label className="grid gap-1 text-sm"><span>本文</span><textarea name="body" rows={6} defaultValue={t.body} required /></label>
+              <div className="text-xs text-slate-500">key: {t.key}</div>
+              <div><Button variant="secondary">保存</Button></div>
+            </form>
+          ))}
         </div>
       </Card>
     </div>

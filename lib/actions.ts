@@ -229,8 +229,10 @@ export async function createEmailApprovalAction(societyId: string, formData: For
     title: parsed.title,
     templateKey: parsed.templateKey,
     filterJson: {
+      targetScope: parsed.targetScope ?? "INVOICE",
       fiscalYear: parsed.fiscalYear ?? null,
       invoiceStatus: parsed.invoiceStatus ?? null,
+      memberStatus: parsed.memberStatus ?? "ACTIVE",
       overdueOnly: parsed.overdueOnly,
     } as any,
   });

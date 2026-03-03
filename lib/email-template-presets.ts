@@ -1,4 +1,4 @@
-export type TemplateCategory = "mailing" | "reminder";
+export type TemplateCategory = "invoice" | "mailing" | "reminder";
 
 export type EmailTemplatePreset = {
   key: string;
@@ -12,16 +12,23 @@ export const EMAIL_TEMPLATE_PRESETS: EmailTemplatePreset[] = [
   {
     key: "annual_invoice",
     name: "年会費請求",
-    category: "mailing",
+    category: "invoice",
     subject: "{{fiscalYear}}年度 年会費のご請求（{{memberName}} 様）",
     body: "{{memberName}} 様\n\n{{fiscalYear}}年度 年会費 {{invoiceAmount}}円 のご請求です。\n支払期限: {{dueDate}}\n\nよろしくお願いいたします。",
   },
   {
     key: "invoice_notice",
     name: "請求案内",
-    category: "mailing",
-    subject: "年会費請求のご案内（{{memberName}} 様）",
+    category: "invoice",
+    subject: "{{fiscalYear}}年度 請求のご案内（{{memberName}} 様）",
     body: "{{memberName}} 様\n\n請求内容をご確認ください。\n金額: {{invoiceAmount}}円\n支払期限: {{dueDate}}\n\nご不明点があればご連絡ください。",
+  },
+  {
+    key: "mailing_general",
+    name: "学会案内（一般）",
+    category: "mailing",
+    subject: "【{{memberName}} 様】学会からのお知らせ",
+    body: "{{memberName}} 様\n\n平素よりお世話になっております。\n本メールは学会からのご案内です。\n\nよろしくお願いいたします。",
   },
   {
     key: "reminder_1",
