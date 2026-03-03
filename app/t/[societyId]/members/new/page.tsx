@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { saveMemberAction } from "@/lib/actions";
 import { Card, PageTitle, InputRow, SelectRow, Button } from "@/components/ui";
+import { societyStatusOptions } from "@/lib/labels";
 
 export default async function NewMemberPage({ params }: { params: Promise<{ societyId: string }> }) {
   const { societyId } = await params;
@@ -18,7 +19,7 @@ export default async function NewMemberPage({ params }: { params: Promise<{ soci
           <InputRow label="電話" name="phone" />
           <InputRow label="会員種別" name="memberType" required placeholder="正会員" />
           <InputRow label="役職" name="position" />
-          <SelectRow label="状態" name="status" defaultValue="ACTIVE" options={[{ value: "ACTIVE", label: "active" }, { value: "INACTIVE", label: "inactive" }]} />
+          <SelectRow label="状態" name="status" defaultValue="ACTIVE" options={societyStatusOptions} />
           <InputRow label="入会日" name="joinedAt" type="date" required />
           <label className="md:col-span-2 grid gap-1 text-sm"><span className="font-medium text-slate-700">住所</span><textarea name="address" rows={3} required /></label>
           <div className="md:col-span-2"><Button>保存</Button></div>

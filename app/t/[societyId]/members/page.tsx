@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTenantContext } from "@/lib/tenant";
 import { importMembersCsvAction } from "@/lib/actions";
 import { PageTitle, Card, Table, Th, Td, StatusBadge } from "@/components/ui";
+import { memberStatusLabel } from "@/lib/labels";
 
 export default async function MembersPage({
   params,
@@ -31,7 +32,7 @@ export default async function MembersPage({
       <Card>
         <form className="grid gap-3 md:grid-cols-[1fr,180px,auto]">
           <input name="q" defaultValue={sp.q ?? ""} placeholder="氏名/会員番号/所属/メール" />
-          <select name="status" defaultValue={sp.status ?? "ALL"}><option value="ALL">全て</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select>
+          <select name="status" defaultValue={sp.status ?? "ALL"}><option value="ALL">全て</option><option value="ACTIVE">有効</option><option value="INACTIVE">無効</option></select>
           <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm">検索</button>
         </form>
       </Card>
@@ -53,7 +54,7 @@ export default async function MembersPage({
       </Card>
       <Card>
         <Table>
-          <thead><tr><Th>会員番号</Th><Th>氏名</Th><Th>種別/所属</Th><Th>連絡先</Th><Th>状態</Th><Th></Th></tr></thead>
+          <thead><tr><Th>会員番号</Th><Th>氏名</Th><Th>種別/所属</Th><Th>連絡先</Th><Th>状態</Th><Th>操作</Th></tr></thead>
           <tbody className="divide-y divide-slate-100">
             {members.map((m) => (
               <tr key={m.id}>
@@ -61,7 +62,7 @@ export default async function MembersPage({
                 <Td><div className="font-medium">{m.name}</div><div className="text-xs text-slate-500">{m.kana || "-"}</div></Td>
                 <Td><div>{m.memberType}</div><div className="text-xs text-slate-500">{m.affiliation}</div></Td>
                 <Td><div>{m.email}</div><div className="text-xs text-slate-500">{m.phone || "-"}</div></Td>
-                <Td><StatusBadge tone={m.status === "ACTIVE" ? "green" : "slate"}>{m.status}</StatusBadge></Td>
+                <Td><StatusBadge tone={m.status === "ACTIVE" ? "green" : "slate"}>{memberStatusLabel(m.status)}</StatusBadge></Td>
                 <Td className="text-right"><Link href={`/t/${societyId}/members/${m.id}`} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">詳細</Link></Td>
               </tr>
             ))}

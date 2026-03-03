@@ -18,7 +18,9 @@ export function AppShell({
   const items = [
     [base, "ダッシュボード"],
     [`${base}/members`, "会員"],
-    [`${base}/invoices`, "請求・督促"],
+    [`${base}/invoices`, "請求"],
+    [`${base}/mailings`, "メール送信"],
+    [`${base}/reminders`, "督促"],
     [`${base}/meetings`, "会議"],
     [`${base}/archives`, "文書・発送"],
     [`${base}/shipments`, "発送履歴"],

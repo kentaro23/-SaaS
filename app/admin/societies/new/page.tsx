@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSocietyAction } from "@/lib/actions";
 import { Card, PageTitle, InputRow, SelectRow, Button } from "@/components/ui";
+import { societyStatusOptions } from "@/lib/labels";
 
 export default function NewSocietyPage() {
   return (
@@ -12,7 +13,7 @@ export default function NewSocietyPage() {
           <InputRow label="略称" name="shortName" required />
           <InputRow label="連絡先メール" name="contactEmail" type="email" required />
           <InputRow label="請求先メール" name="billingEmail" type="email" required />
-          <SelectRow label="状態" name="status" defaultValue="ACTIVE" options={[{ value: "ACTIVE", label: "active" }, { value: "INACTIVE", label: "inactive" }]} />
+          <SelectRow label="状態" name="status" defaultValue="ACTIVE" options={societyStatusOptions} />
           <div className="md:col-span-2"><Button>作成</Button></div>
         </form>
       </Card>

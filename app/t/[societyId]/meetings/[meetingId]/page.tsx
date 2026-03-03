@@ -3,6 +3,15 @@ import { getTenantContext } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { addAttendanceAction, addDecisionAction, addMeetingDocumentAction, addTaskAction, saveMeetingAction, saveMinutesAction, updateTaskStatusAction } from "@/lib/actions";
 import { Card, PageTitle, Button, Table, Th, Td, StatusBadge } from "@/components/ui";
+import {
+  attendanceStatusLabel,
+  attendanceStatusOptions,
+  meetingStatusOptions,
+  meetingTypeLabel,
+  meetingTypeOptions,
+  taskStatusLabel,
+  taskStatusOptions,
+} from "@/lib/labels";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
 export default async function MeetingDetailPage({ params }: { params: Promise<{ societyId: string; meetingId: string }> }) {
@@ -16,16 +25,16 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-5">
-      <PageTitle title={meeting.title} subtitle={`${meeting.type} / ${formatDateTime(meeting.scheduledAt)}`} />
+      <PageTitle title={meeting.title} subtitle={`${meetingTypeLabel(meeting.type)} / ${formatDateTime(meeting.scheduledAt)}`} />
 
       <Card>
         <h2 className="mb-3 font-semibold">会議基本情報</h2>
         <form action={saveMeetingAction.bind(null, societyId)} className="grid gap-4 md:grid-cols-2">
           <input type="hidden" name="id" value={meeting.id} />
           <label className="grid gap-1 text-sm"><span>タイトル</span><input name="title" defaultValue={meeting.title} required /></label>
-          <label className="grid gap-1 text-sm"><span>種別</span><select name="type" defaultValue={meeting.type}><option value="BOARD">board</option><option value="COMMITTEE">committee</option><option value="OTHER">other</option></select></label>
+          <label className="grid gap-1 text-sm"><span>種別</span><select name="type" defaultValue={meeting.type}>{meetingTypeOptions.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</select></label>
           <label className="grid gap-1 text-sm"><span>開催日時</span><input name="scheduledAt" type="datetime-local" defaultValue={new Date(meeting.scheduledAt).toISOString().slice(0,16)} required /></label>
-          <label className="grid gap-1 text-sm"><span>状態</span><select name="status" defaultValue={meeting.status}><option value="DRAFT">draft</option><option value="SCHEDULED">scheduled</option><option value="DONE">done</option></select></label>
+          <label className="grid gap-1 text-sm"><span>状態</span><select name="status" defaultValue={meeting.status}>{meetingStatusOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
           <label className="grid gap-1 text-sm"><span>場所</span><input name="location" defaultValue={meeting.location ?? ""} /></label>
           <label className="grid gap-1 text-sm"><span>オンラインURL</span><input name="onlineUrl" defaultValue={meeting.onlineUrl ?? ""} /></label>
           <label className="md:col-span-2 grid gap-1 text-sm"><span>議題</span><textarea name="agenda" rows={5} defaultValue={meeting.agenda ?? ""} /></label>
@@ -39,13 +48,13 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
           <form action={addAttendanceAction.bind(null, societyId, meeting.id)} className="mb-3 grid gap-3 md:grid-cols-2">
             <label className="grid gap-1 text-sm"><span>会員（任意）</span><select name="memberId" defaultValue=""><option value="">選択なし</option>{members.map((m) => <option key={m.id} value={m.id}>{m.memberNo} {m.name}</option>)}</select></label>
             <label className="grid gap-1 text-sm"><span>外部参加者名（任意）</span><input name="externalName" /></label>
-            <label className="grid gap-1 text-sm"><span>回答</span><select name="status" defaultValue="YES"><option value="YES">yes</option><option value="NO">no</option><option value="MAYBE">maybe</option></select></label>
+            <label className="grid gap-1 text-sm"><span>回答</span><select name="status" defaultValue="YES">{attendanceStatusOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
             <label className="grid gap-1 text-sm"><span>備考</span><input name="note" /></label>
             <div className="md:col-span-2"><Button>追加</Button></div>
           </form>
           <Table>
             <thead><tr><Th>対象</Th><Th>回答</Th><Th>備考</Th></tr></thead>
-            <tbody className="divide-y divide-slate-100">{meeting.attendances.map((a) => <tr key={a.id}><Td>{a.member ? `${a.member.memberNo} ${a.member.name}` : a.externalName}</Td><Td>{a.status}</Td><Td>{a.note || '-'}</Td></tr>)}</tbody>
+            <tbody className="divide-y divide-slate-100">{meeting.attendances.map((a) => <tr key={a.id}><Td>{a.member ? `${a.member.memberNo} ${a.member.name}` : a.externalName}</Td><Td>{attendanceStatusLabel(a.status)}</Td><Td>{a.note || '-'}</Td></tr>)}</tbody>
           </Table>
         </Card>
 
@@ -84,7 +93,7 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
             <label className="grid gap-1 text-sm"><span>タイトル</span><input name="title" required /></label>
             <label className="grid gap-1 text-sm"><span>担当</span><input name="assignee" /></label>
             <label className="grid gap-1 text-sm"><span>期限</span><input name="dueDate" type="date" /></label>
-            <label className="grid gap-1 text-sm"><span>状態</span><select name="status" defaultValue="OPEN"><option value="OPEN">open</option><option value="DONE">done</option></select></label>
+            <label className="grid gap-1 text-sm"><span>状態</span><select name="status" defaultValue="OPEN">{taskStatusOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
             <div className="md:col-span-2"><Button>追加</Button></div>
           </form>
           <div className="space-y-2">
@@ -96,7 +105,8 @@ export default async function MeetingDetailPage({ params }: { params: Promise<{ 
                 </div>
                 <form action={updateTaskStatusAction.bind(null, societyId, meeting.id)} className="flex items-center gap-2">
                   <input type="hidden" name="taskId" value={t.id} />
-                  <select name="status" defaultValue={t.status}><option value="OPEN">open</option><option value="DONE">done</option></select>
+                  <select name="status" defaultValue={t.status}>{taskStatusOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
+                  <StatusBadge tone={t.status === "DONE" ? "green" : "yellow"}>{taskStatusLabel(t.status)}</StatusBadge>
                   <Button variant="secondary">更新</Button>
                 </form>
               </div>

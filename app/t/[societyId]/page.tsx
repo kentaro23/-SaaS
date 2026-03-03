@@ -11,7 +11,7 @@ export default async function TenantDashboardPage({ params }: { params: Promise<
     <div className="space-y-5">
       <PageTitle title={`${society.name} ダッシュボード`} subtitle={`現在テナント: ${society.shortName}`} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card><div className="text-xs text-slate-500">会員（active）</div><div className="mt-2 text-2xl font-semibold">{summary.memberCount}</div></Card>
+        <Card><div className="text-xs text-slate-500">会員（有効）</div><div className="mt-2 text-2xl font-semibold">{summary.memberCount}</div></Card>
         <Card><div className="text-xs text-slate-500">未納/送信待ち請求</div><div className="mt-2 text-2xl font-semibold">{summary.unpaidInvoices}</div></Card>
         <Card><div className="text-xs text-slate-500">今後の会議</div><div className="mt-2 text-2xl font-semibold">{summary.meetingsUpcoming}</div></Card>
         <Card><div className="text-xs text-slate-500">発送バッチ累計</div><div className="mt-2 text-2xl font-semibold">{summary.shipmentCount}</div></Card>

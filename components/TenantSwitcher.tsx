@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { roleLabel } from "@/lib/labels";
 
 export function TenantSwitcher({ currentSocietyId, memberships }: { currentSocietyId: string; memberships: Array<any> }) {
   return (
@@ -12,7 +13,7 @@ export function TenantSwitcher({ currentSocietyId, memberships }: { currentSocie
             className={`rounded-lg px-3 py-2 text-sm ${m.societyId === currentSocietyId ? "bg-teal-700 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
           >
             <div className="font-medium">{m.society.shortName}</div>
-            <div className={`text-xs ${m.societyId === currentSocietyId ? "text-teal-100" : "text-slate-500"}`}>{m.role}</div>
+            <div className={`text-xs ${m.societyId === currentSocietyId ? "text-teal-100" : "text-slate-500"}`}>{roleLabel(m.role)}</div>
           </Link>
         ))}
       </div>

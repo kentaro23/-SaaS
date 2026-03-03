@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { createSocietyAdminRepo } from "@/lib/repositories/society-admin-repo";
 import { PageTitle, Card, Table, Th, Td, StatusBadge } from "@/components/ui";
+import { societyStatusLabel } from "@/lib/labels";
 
 export default async function AdminSocietiesPage() {
   const user = await requireUser();
@@ -25,7 +26,7 @@ export default async function AdminSocietiesPage() {
                   <div className="font-medium">{s.name}</div>
                   <div className="text-xs text-slate-500">{s.shortName}</div>
                 </Td>
-                <Td><StatusBadge tone={s.status === "ACTIVE" ? "green" : "slate"}>{s.status}</StatusBadge></Td>
+                <Td><StatusBadge tone={s.status === "ACTIVE" ? "green" : "slate"}>{societyStatusLabel(s.status)}</StatusBadge></Td>
                 <Td>
                   <div>{s.contactEmail}</div>
                   <div className="text-xs text-slate-500">請求: {s.billingEmail}</div>

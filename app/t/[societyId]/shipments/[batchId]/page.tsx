@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTenantContext } from "@/lib/tenant";
 import { updateShipmentRecipientStatusAction } from "@/lib/actions";
 import { Card, PageTitle, Table, Th, Td, Button } from "@/components/ui";
+import { shipmentRecipientStatusLabel, shipmentRecipientStatusOptions, shipmentTypeLabel } from "@/lib/labels";
 import { formatDateTime } from "@/lib/utils";
 
 export default async function ShipmentBatchDetailPage({ params }: { params: Promise<{ societyId: string; batchId: string }> }) {
@@ -12,7 +13,7 @@ export default async function ShipmentBatchDetailPage({ params }: { params: Prom
 
   return (
     <div className="space-y-5">
-      <PageTitle title={`発送バッチ詳細`} subtitle={`${batch.type} / ${formatDateTime(batch.createdAt)} / ${batch.title || '-'}`} action={<a href={`/t/${societyId}/shipments/${batch.id}/export`} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">CSVエクスポート</a>} />
+      <PageTitle title={`発送バッチ詳細`} subtitle={`${shipmentTypeLabel(batch.type)} / ${formatDateTime(batch.createdAt)} / ${batch.title || '-'}`} action={<a href={`/t/${societyId}/shipments/${batch.id}/export`} className="rounded-lg border border-slate-300 px-3 py-2 text-sm">CSVエクスポート</a>} />
       <Card>
         <div className="mb-3 text-sm text-slate-600">対象会員数: {batch.recipients.length}</div>
         <Table>
@@ -23,11 +24,11 @@ export default async function ShipmentBatchDetailPage({ params }: { params: Prom
                 <Td>{r.member.memberNo}</Td>
                 <Td>{r.member.name}</Td>
                 <Td className="whitespace-pre-wrap text-xs">{r.addressSnapshot}</Td>
-                <Td>{r.status}</Td>
+                <Td>{shipmentRecipientStatusLabel(r.status)}</Td>
                 <Td>
                   <form action={updateShipmentRecipientStatusAction.bind(null, societyId, batch.id)} className="flex items-center gap-2">
                     <input type="hidden" name="recipientId" value={r.id} />
-                    <select name="status" defaultValue={r.status}><option value="QUEUED">queued</option><option value="SENT">sent</option><option value="RETURNED">returned</option></select>
+                    <select name="status" defaultValue={r.status}>{shipmentRecipientStatusOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</select>
                     <Button variant="secondary">更新</Button>
                   </form>
                 </Td>

@@ -5,6 +5,7 @@ import { createSocietyAdminRepo } from "@/lib/repositories/society-admin-repo";
 import { assignSocietyStaffAdminAction, removeSocietyStaffAdminAction, updateSocietyAction, createStaffUserAction } from "@/lib/actions";
 import { Card, PageTitle, InputRow, SelectRow, Button, Table, Th, Td } from "@/components/ui";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
+import { roleLabel, roleOptions, societyStatusOptions } from "@/lib/labels";
 
 export default async function AdminSocietyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +30,7 @@ export default async function AdminSocietyDetailPage({ params }: { params: Promi
           <InputRow label="略称" name="shortName" required defaultValue={society.shortName} />
           <InputRow label="連絡先メール" name="contactEmail" type="email" required defaultValue={society.contactEmail} />
           <InputRow label="請求先メール" name="billingEmail" type="email" required defaultValue={society.billingEmail} />
-          <SelectRow label="状態" name="status" defaultValue={society.status} options={[{ value: "ACTIVE", label: "active" }, { value: "INACTIVE", label: "inactive" }]} />
+          <SelectRow label="状態" name="status" defaultValue={society.status} options={societyStatusOptions} />
           <div className="md:col-span-2"><Button>更新</Button></div>
         </form>
       </Card>
@@ -39,16 +40,16 @@ export default async function AdminSocietyDetailPage({ params }: { params: Promi
         <form action={assignSocietyStaffAdminAction} className="mb-4 grid gap-3 md:grid-cols-[1fr,220px,auto]">
           <input type="hidden" name="societyId" value={society.id} />
           <label className="grid gap-1 text-sm"><span>ユーザ</span><select name="userId">{users.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}</select></label>
-          <SelectRow label="Role" name="role" defaultValue="STAFF" options={[{ value: "OWNER", label: "Owner" }, { value: "ADMIN", label: "Admin" }, { value: "STAFF", label: "Staff" }, { value: "READ_ONLY", label: "ReadOnly" }]} />
+          <SelectRow label="権限" name="role" defaultValue="STAFF" options={roleOptions} />
           <div className="self-end"><Button>割当/更新</Button></div>
         </form>
         <Table>
-          <thead><tr><Th>ユーザ</Th><Th>Role</Th><Th></Th></tr></thead>
+          <thead><tr><Th>ユーザ</Th><Th>権限</Th><Th>操作</Th></tr></thead>
           <tbody className="divide-y divide-slate-100">
             {society.staff.map((m) => (
               <tr key={m.id}>
                 <Td><div className="font-medium">{m.user.name}</div><div className="text-xs text-slate-500">{m.user.email}</div></Td>
-                <Td>{m.role}</Td>
+                <Td>{roleLabel(m.role)}</Td>
                 <Td className="text-right">
                   <form action={removeSocietyStaffAdminAction}>
                     <input type="hidden" name="societyId" value={society.id} />

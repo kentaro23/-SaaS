@@ -1,5 +1,6 @@
 import { saveMeetingAction } from "@/lib/actions";
 import { Card, PageTitle, InputRow, SelectRow, Button } from "@/components/ui";
+import { meetingStatusOptions, meetingTypeOptions } from "@/lib/labels";
 
 export default async function NewMeetingPage({ params }: { params: Promise<{ societyId: string }> }) {
   const { societyId } = await params;
@@ -10,9 +11,9 @@ export default async function NewMeetingPage({ params }: { params: Promise<{ soc
       <Card>
         <form action={action} className="grid gap-4 md:grid-cols-2">
           <InputRow label="タイトル" name="title" required />
-          <SelectRow label="種別" name="type" defaultValue="BOARD" options={[{ value: "BOARD", label: "board" }, { value: "COMMITTEE", label: "committee" }, { value: "OTHER", label: "other" }]} />
+          <SelectRow label="種別" name="type" defaultValue="BOARD" options={meetingTypeOptions} />
           <label className="grid gap-1 text-sm"><span className="font-medium text-slate-700">開催日時</span><input name="scheduledAt" type="datetime-local" required /></label>
-          <SelectRow label="状態" name="status" defaultValue="SCHEDULED" options={[{ value: "DRAFT", label: "draft" }, { value: "SCHEDULED", label: "scheduled" }, { value: "DONE", label: "done" }]} />
+          <SelectRow label="状態" name="status" defaultValue="SCHEDULED" options={meetingStatusOptions} />
           <InputRow label="場所" name="location" />
           <InputRow label="オンラインURL" name="onlineUrl" />
           <label className="md:col-span-2 grid gap-1 text-sm"><span className="font-medium text-slate-700">議題</span><textarea name="agenda" rows={6} /></label>

@@ -3,6 +3,7 @@ import { getTenantContext } from "@/lib/tenant";
 import { saveMemberAction } from "@/lib/actions";
 import { PageTitle, Card, InputRow, SelectRow, Button, Table, Th, Td, StatusBadge } from "@/components/ui";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
+import { invoiceStatusLabel, societyStatusOptions } from "@/lib/labels";
 import { formatCurrencyJPY, formatDate, toDateInput } from "@/lib/utils";
 
 export default async function MemberDetailPage({ params }: { params: Promise<{ societyId: string; memberId: string }> }) {
@@ -28,7 +29,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ s
           <InputRow label="電話" name="phone" defaultValue={member.phone ?? ""} />
           <InputRow label="会員種別" name="memberType" required defaultValue={member.memberType} />
           <InputRow label="役職" name="position" defaultValue={member.position ?? ""} />
-          <SelectRow label="状態" name="status" defaultValue={member.status} options={[{ value: "ACTIVE", label: "active" }, { value: "INACTIVE", label: "inactive" }]} />
+          <SelectRow label="状態" name="status" defaultValue={member.status} options={societyStatusOptions} />
           <InputRow label="入会日" name="joinedAt" type="date" required defaultValue={toDateInput(member.joinedAt)} />
           <InputRow label="退会日" name="leftAt" type="date" defaultValue={toDateInput(member.leftAt)} />
           <label className="md:col-span-2 grid gap-1 text-sm"><span className="font-medium text-slate-700">住所</span><textarea name="address" rows={3} defaultValue={member.address} required /></label>
@@ -46,7 +47,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ s
                 <Td>{inv.fiscalYear}</Td>
                 <Td>{formatCurrencyJPY(inv.amount)}</Td>
                 <Td>{formatDate(inv.dueDate)}</Td>
-                <Td><StatusBadge tone={inv.status === "PAID" ? "green" : inv.status === "OVERDUE" ? "red" : "yellow"}>{inv.status}</StatusBadge></Td>
+                <Td><StatusBadge tone={inv.status === "PAID" ? "green" : inv.status === "OVERDUE" ? "red" : "yellow"}>{invoiceStatusLabel(inv.status)}</StatusBadge></Td>
                 <Td>{inv.receipt ? <a href={inv.receipt.filePath} className="text-sm">ダウンロード</a> : "-"}</Td>
               </tr>
             ))}

@@ -204,6 +204,7 @@ export async function markOverdueAction(societyId: string) {
   const repo = createTenantRepo({ societyId, actorUserId: user.id });
   await repo.markOverdueInvoices();
   revalidatePath(`/t/${societyId}/invoices`);
+  revalidatePath(`/t/${societyId}/reminders`);
 }
 
 export async function upsertEmailTemplateAction(societyId: string, formData: FormData) {
@@ -213,6 +214,8 @@ export async function upsertEmailTemplateAction(societyId: string, formData: For
   await repo.upsertEmailTemplate(parsed);
   revalidatePath(`/t/${societyId}/settings/email-templates`);
   revalidatePath(`/t/${societyId}/invoices`);
+  revalidatePath(`/t/${societyId}/mailings`);
+  revalidatePath(`/t/${societyId}/reminders`);
 }
 
 export async function createEmailApprovalAction(societyId: string, formData: FormData) {
@@ -233,6 +236,8 @@ export async function createEmailApprovalAction(societyId: string, formData: For
   });
   await repo.queueApprovalRecipients(approval.id);
   revalidatePath(`/t/${societyId}/invoices`);
+  revalidatePath(`/t/${societyId}/mailings`);
+  revalidatePath(`/t/${societyId}/reminders`);
 }
 
 export async function approveEmailApprovalAction(societyId: string, formData: FormData) {
@@ -241,6 +246,8 @@ export async function approveEmailApprovalAction(societyId: string, formData: Fo
   const repo = createTenantRepo({ societyId, actorUserId: user.id });
   await repo.approveEmailApproval(approvalId);
   revalidatePath(`/t/${societyId}/invoices`);
+  revalidatePath(`/t/${societyId}/mailings`);
+  revalidatePath(`/t/${societyId}/reminders`);
 }
 
 export async function sendApprovedEmailAction(societyId: string, formData: FormData) {
@@ -274,6 +281,8 @@ export async function sendApprovedEmailAction(societyId: string, formData: FormD
   }
   await repo.finalizeEmailApprovalSent(approvalId);
   revalidatePath(`/t/${societyId}/invoices`);
+  revalidatePath(`/t/${societyId}/mailings`);
+  revalidatePath(`/t/${societyId}/reminders`);
 }
 
 export async function generateReceiptAction(societyId: string, formData: FormData) {

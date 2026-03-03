@@ -1,6 +1,7 @@
 import { getTenantContext } from "@/lib/tenant";
 import { saveSocietyMailSettingsAction } from "@/lib/actions";
 import { Card, PageTitle, Button, SelectRow } from "@/components/ui";
+import { mailProviderOptions } from "@/lib/labels";
 
 export default async function MailSettingsPage({ params }: { params: Promise<{ societyId: string }> }) {
   const { societyId } = await params;
@@ -17,11 +18,7 @@ export default async function MailSettingsPage({ params }: { params: Promise<{ s
             label="送信プロバイダ"
             name="mailProvider"
             defaultValue={settings?.mailProvider ?? "smtp"}
-            options={[
-              { value: "smtp", label: "smtp" },
-              { value: "gmail_api", label: "gmail_api(準備中)" },
-              { value: "console", label: "console(dev)" },
-            ]}
+            options={mailProviderOptions}
           />
           <label className="grid gap-1 text-sm">
             <span className="font-medium text-slate-700">送信元アドレス（From）</span>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTenantContext } from "@/lib/tenant";
 import { createArchiveAction } from "@/lib/actions";
 import { Card, PageTitle, Table, Th, Td, Button } from "@/components/ui";
+import { archiveCategoryLabel, archiveCategoryOptions } from "@/lib/labels";
 import { formatDate } from "@/lib/utils";
 
 export default async function ArchivesPage({
@@ -22,19 +23,19 @@ export default async function ArchivesPage({
       <Card>
         <form className="mb-4 grid gap-3 md:grid-cols-[1fr,180px,180px,auto]">
           <input name="q" defaultValue={sp.q ?? ''} placeholder="title or tags" />
-          <select name="category" defaultValue={sp.category ?? 'ALL'}><option value="ALL">全カテゴリ</option><option value="JOURNAL">journal</option><option value="NOTICE">notice</option><option value="OTHER">other</option></select>
+          <select name="category" defaultValue={sp.category ?? 'ALL'}><option value="ALL">全カテゴリ</option>{archiveCategoryOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
           <input name="issueNo" defaultValue={sp.issueNo ?? ''} placeholder="issueNo" />
           <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm">検索</button>
         </form>
         <Table>
           <thead><tr><Th>カテゴリ</Th><Th>タイトル</Th><Th>号数</Th><Th>公開日</Th><Th>タグ</Th><Th>ファイル</Th></tr></thead>
-          <tbody className="divide-y divide-slate-100">{archives.map((a) => <tr key={a.id}><Td>{a.category}</Td><Td>{a.title}</Td><Td>{a.issueNo || '-'}</Td><Td>{formatDate(a.publishedAt)}</Td><Td className="text-xs">{a.tags.join(', ')}</Td><Td><a href={a.fileUrl} target="_blank">開く</a></Td></tr>)}</tbody>
+          <tbody className="divide-y divide-slate-100">{archives.map((a) => <tr key={a.id}><Td>{archiveCategoryLabel(a.category)}</Td><Td>{a.title}</Td><Td>{a.issueNo || '-'}</Td><Td>{formatDate(a.publishedAt)}</Td><Td className="text-xs">{a.tags.join(', ')}</Td><Td><a href={a.fileUrl} target="_blank">開く</a></Td></tr>)}</tbody>
         </Table>
       </Card>
       <Card>
         <h2 className="mb-3 font-semibold">文書登録</h2>
         <form action={createArchiveAction.bind(null, societyId)} className="grid gap-3 md:grid-cols-2">
-          <label className="grid gap-1 text-sm"><span>カテゴリ</span><select name="category"><option value="JOURNAL">journal</option><option value="NOTICE">notice</option><option value="OTHER">other</option></select></label>
+          <label className="grid gap-1 text-sm"><span>カテゴリ</span><select name="category">{archiveCategoryOptions.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
           <label className="grid gap-1 text-sm"><span>タイトル</span><input name="title" required /></label>
           <label className="grid gap-1 text-sm"><span>号数</span><input name="issueNo" /></label>
           <label className="grid gap-1 text-sm"><span>公開日</span><input name="publishedAt" type="date" /></label>
