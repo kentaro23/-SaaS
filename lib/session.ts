@@ -20,6 +20,25 @@ export async function getAccessibleSocieties(userId: string) {
   });
 }
 
+export async function isOwnerUser(userId: string, email?: string | null) {
+  const ownerEmail = process.env.ROOT_OWNER_EMAIL?.trim().toLowerCase();
+  if (ownerEmail && email?.toLowerCase() === ownerEmail) return true;
+  const ownerMembership = await prisma.societyMember.findFirst({
+    where: { userId, role: "OWNER" },
+    select: { id: true },
+  });
+  return !!ownerMembership;
+}
+
+export async function requireOwnerUser() {
+  const user = await requireUser();
+  const allowed = await isOwnerUser(user.id, user.email);
+  if (!allowed) {
+    redirect("/admin/societies");
+  }
+  return user;
+}
+
 export async function requireSocietyAccess(societyId: string, minimumRole: SocietyRole = "READ_ONLY") {
   const user = await requireUser();
   const membership = await prisma.societyMember.findUnique({

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { createSocietyAdminRepo } from "@/lib/repositories/society-admin-repo";
-import { assignSocietyStaffAdminAction, removeSocietyStaffAdminAction, updateSocietyAction, createStaffUserAction } from "@/lib/actions";
+import { assignSocietyStaffAdminAction, removeSocietyStaffAdminAction, updateSocietyAction } from "@/lib/actions";
 import { Card, PageTitle, InputRow, SelectRow, Button, Table, Th, Td } from "@/components/ui";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
 import { roleLabel, roleOptions, societyStatusOptions } from "@/lib/labels";
@@ -64,13 +64,14 @@ export default async function AdminSocietyDetailPage({ params }: { params: Promi
       </Card>
 
       <Card>
-        <h2 className="mb-3 font-semibold">社内ユーザ追加</h2>
-        <form action={createStaffUserAction} className="grid gap-3 md:grid-cols-3">
-          <InputRow label="名前" name="name" required />
-          <InputRow label="Email" name="email" type="email" required />
-          <InputRow label="Password" name="password" type="text" required defaultValue="password123" />
-          <div className="md:col-span-3"><Button>ユーザ作成</Button></div>
-        </form>
+        <h2 className="mb-2 font-semibold">社内ユーザ追加</h2>
+        <p className="text-sm text-slate-600">
+          社員アカウントの新規登録はオーナーのみ可能です。
+          {" "}
+          <a href="/staff-register" className="underline">新規社員登録ページ</a>
+          {" "}
+          から実行してください。
+        </p>
       </Card>
 
       <AuditLogPanel logs={logs} />

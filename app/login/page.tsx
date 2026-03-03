@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,15 @@ export default function LoginPage() {
           <button disabled={loading} className="mt-2 rounded-lg bg-teal-700 px-3 py-2 text-sm font-medium text-white hover:bg-teal-800 disabled:opacity-60">
             {loading ? "ログイン中..." : "ログイン"}
           </button>
+          <p className="text-xs text-slate-500">
+            オーナーの方はログイン後に
+            {" "}
+            <Link href="/staff-register" className="underline">
+              新規社員登録ページ
+            </Link>
+            {" "}
+            へ進んでください。
+          </p>
         </div>
       </form>
     </div>

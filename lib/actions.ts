@@ -8,7 +8,7 @@ import { signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createSocietyAdminRepo } from "@/lib/repositories/society-admin-repo";
 import { createTenantRepo } from "@/lib/repositories/tenant-repo";
-import { requireUser, requireSocietyAccess } from "@/lib/session";
+import { requireOwnerUser, requireUser, requireSocietyAccess } from "@/lib/session";
 import { getMailProvider } from "@/lib/mail";
 import { buildReceiptPdf } from "@/lib/receipt-pdf";
 import { getUploadBaseDir, ensureDir } from "@/lib/files";
@@ -457,15 +457,22 @@ export async function updateShipmentRecipientStatusAction(societyId: string, bat
 }
 
 export async function createStaffUserAction(formData: FormData) {
-  const current = await requireUser();
+  const current = await requireOwnerUser();
+  const redirectTo = String(formData.get("redirectTo") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const password = String(formData.get("password") ?? "").trim();
   if (!email || !name || !password) throw new Error("必須項目が不足しています");
+  const exists = await prisma.user.findUnique({ where: { email } });
+  if (exists) throw new Error("そのメールアドレスは既に登録されています");
   const bcrypt = await import("bcryptjs");
   const passwordHash = await bcrypt.default.hash(password, 10);
   await prisma.user.create({ data: { email, name, passwordHash, status: "ACTIVE" } });
   revalidatePath("/admin/societies");
-  revalidatePath(`/admin/societies`);
-  console.log("created by", current.id);
+  revalidatePath("/staff-register");
+  if (redirectTo) {
+    redirect(`${redirectTo}?created=1`);
+  }
+  revalidatePath("/admin/societies");
+  console.log("created by owner", current.id);
 }

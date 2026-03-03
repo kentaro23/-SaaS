@@ -6,3 +6,4 @@ prisma/dev.db
 coverage
 uploads
 .vercel
+.env*.local
