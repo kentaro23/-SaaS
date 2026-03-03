@@ -84,16 +84,31 @@ export default async function InvoicesPage({
 
       <Card>
         <h2 className="mb-3 font-semibold">月次レポート自動生成</h2>
-        <form action={monthlyAction} className="grid gap-3 md:grid-cols-[140px,120px,auto]">
+        <form action={monthlyAction} className="grid items-end gap-3 md:grid-cols-[160px,140px,auto]">
           <label className="grid gap-1 text-sm">
             <span>年</span>
-            <input name="year" type="number" defaultValue={new Date().getFullYear()} required />
+            <select name="year" defaultValue={String(new Date().getFullYear())}>
+              {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="grid gap-1 text-sm">
             <span>月</span>
-            <input name="month" type="number" min={1} max={12} defaultValue={new Date().getMonth() + 1} required />
+            <select name="month" defaultValue={String(new Date().getMonth() + 1)}>
+              {Array.from({ length: 12 }).map((_, i) => {
+                const m = i + 1;
+                return (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                );
+              })}
+            </select>
           </label>
-          <div className="self-end">
+          <div>
             <Button variant="secondary">再生成</Button>
           </div>
         </form>
