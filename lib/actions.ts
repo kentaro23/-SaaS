@@ -26,6 +26,8 @@ import {
   meetingSchema,
   memberSchema,
   minutesSchema,
+  publicMemberFormSchema,
+  publicMemberRegistrationSchema,
   shipmentBatchSchema,
   societyMailSettingSchema,
   societyPlanSchema,
@@ -53,6 +55,20 @@ function nullableText(v: unknown) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
   return s.length ? s : null;
+}
+
+async function nextPublicMemberNo(societyId: string) {
+  const prefix = `WEB${new Date().getFullYear()}`;
+  for (let i = 0; i < 20; i += 1) {
+    const seq = Math.floor(Math.random() * 900000 + 100000);
+    const memberNo = `${prefix}-${seq}`;
+    const exists = await prisma.member.findUnique({
+      where: { societyId_memberNo: { societyId, memberNo } },
+      select: { id: true },
+    });
+    if (!exists) return memberNo;
+  }
+  return `${prefix}-${Date.now().toString().slice(-8)}`;
 }
 
 function ensureMailSettingsForSend(settings: {
@@ -247,6 +263,79 @@ export async function importMembersCsvAction(societyId: string, formData: FormDa
   redirect(
     `/t/${societyId}/members?importCreated=${created}&importUpdated=${updated}&importSkipped=${skippedTotal}`,
   );
+}
+
+export async function savePublicMemberFormAction(societyId: string, formData: FormData) {
+  const { user } = await requireSocietyAccess(societyId, "STAFF");
+  const parsed = publicMemberFormSchema.parse({
+    ...formDataToObject(formData),
+    enabled: boolVal(formData, "enabled"),
+    allowMemberTypeInput: boolVal(formData, "allowMemberTypeInput"),
+  });
+  const repo = createTenantRepo({ societyId, actorUserId: user.id });
+  try {
+    await repo.upsertPublicMemberForm({
+      slug: parsed.slug.trim().toLowerCase(),
+      enabled: parsed.enabled,
+      title: parsed.title.trim(),
+      description: nullableText(parsed.description),
+      defaultMemberType: parsed.defaultMemberType.trim(),
+      allowMemberTypeInput: parsed.allowMemberTypeInput,
+    });
+  } catch (error: any) {
+    if (error?.code === "P2002") {
+      redirect(`/t/${societyId}/members?publicFormError=slug`);
+    }
+    throw error;
+  }
+  revalidatePath(`/t/${societyId}/members`);
+  revalidatePath(`/join/${parsed.slug.trim().toLowerCase()}`);
+  redirect(`/t/${societyId}/members?publicFormSaved=1`);
+}
+
+export async function submitPublicMemberRegistrationAction(slug: string, formData: FormData) {
+  const form = await prisma.publicMemberForm.findUnique({
+    where: { slug },
+    select: {
+      slug: true,
+      enabled: true,
+      societyId: true,
+      defaultMemberType: true,
+      allowMemberTypeInput: true,
+    },
+  });
+  if (!form || !form.enabled) {
+    redirect(`/join/${slug}?error=unavailable`);
+  }
+
+  const parsed = publicMemberRegistrationSchema.safeParse(formDataToObject(formData));
+  if (!parsed.success) {
+    redirect(`/join/${slug}?error=invalid`);
+  }
+
+  const row = parsed.data;
+  const memberType = form.allowMemberTypeInput
+    ? nullableText(row.memberType) ?? form.defaultMemberType
+    : form.defaultMemberType;
+  const memberNo = await nextPublicMemberNo(form.societyId);
+  const repo = createTenantRepo({ societyId: form.societyId, actorUserId: null });
+  await repo.upsertMember({
+    societyId: form.societyId,
+    memberNo,
+    name: row.name.trim(),
+    kana: nullableText(row.kana),
+    affiliation: row.affiliation.trim(),
+    address: row.address.trim(),
+    email: row.email.trim(),
+    phone: nullableText(row.phone),
+    memberType,
+    position: null,
+    status: "ACTIVE",
+    joinedAt: new Date(),
+    leftAt: null,
+  });
+  revalidatePath(`/t/${form.societyId}/members`);
+  redirect(`/join/${form.slug}?success=1`);
 }
 
 export async function generateAnnualInvoicesAction(societyId: string, formData: FormData) {

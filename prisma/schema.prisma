@@ -139,6 +139,7 @@ model User {
   auditLogs    AuditLog[]
   shipments    ShipmentBatch[] @relation("ShipmentCreatedBy")
   reminderActions InvoiceReminderLog[]
+  createdPublicForms PublicMemberForm[] @relation("PublicMemberFormCreator")
 }
 
 model Society {
@@ -179,6 +180,23 @@ model Society {
   emailMessages EmailMessage[]
   monthlyReports MonthlyReport[]
   invoiceReminderLogs InvoiceReminderLog[]
+  publicMemberForm PublicMemberForm?
+}
+
+model PublicMemberForm {
+  id                   String   @id @default(cuid())
+  societyId            String   @unique
+  slug                 String   @unique
+  enabled              Boolean  @default(false)
+  title                String
+  description          String?
+  defaultMemberType    String
+  allowMemberTypeInput Boolean  @default(false)
+  createdByUserId      String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  society              Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  createdBy            User?    @relation("PublicMemberFormCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
 }
 
 model SocietyPlan {

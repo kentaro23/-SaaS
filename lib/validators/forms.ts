@@ -139,3 +139,26 @@ export const shipmentBatchSchema = z.object({
   type: z.enum(["JOURNAL", "NOTICE"]),
   title: z.string().optional().nullable(),
 });
+
+export const publicMemberFormSchema = z.object({
+  slug: z
+    .string()
+    .min(3)
+    .max(64)
+    .regex(/^[a-z0-9-]+$/),
+  enabled: z.coerce.boolean().default(false),
+  title: z.string().min(1),
+  description: z.string().optional().nullable(),
+  defaultMemberType: z.string().min(1),
+  allowMemberTypeInput: z.coerce.boolean().default(false),
+});
+
+export const publicMemberRegistrationSchema = z.object({
+  name: z.string().min(1),
+  kana: z.string().optional().nullable(),
+  affiliation: z.string().min(1),
+  address: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().optional().nullable(),
+  memberType: z.string().optional().nullable(),
+});

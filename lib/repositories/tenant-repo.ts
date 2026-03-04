@@ -696,6 +696,50 @@ export function createTenantRepo(ctx: TenantRepoContext) {
       return society;
     },
 
+    async getPublicMemberForm() {
+      return prisma.publicMemberForm.findUnique({ where: { societyId } });
+    },
+
+    async upsertPublicMemberForm(input: {
+      slug: string;
+      enabled: boolean;
+      title: string;
+      description?: string | null;
+      defaultMemberType: string;
+      allowMemberTypeInput: boolean;
+    }) {
+      const before = await prisma.publicMemberForm.findUnique({ where: { societyId } });
+      const form = await prisma.publicMemberForm.upsert({
+        where: { societyId },
+        create: {
+          societyId,
+          slug: input.slug,
+          enabled: input.enabled,
+          title: input.title,
+          description: input.description ?? null,
+          defaultMemberType: input.defaultMemberType,
+          allowMemberTypeInput: input.allowMemberTypeInput,
+          createdByUserId: actorUserId ?? null,
+        },
+        update: {
+          slug: input.slug,
+          enabled: input.enabled,
+          title: input.title,
+          description: input.description ?? null,
+          defaultMemberType: input.defaultMemberType,
+          allowMemberTypeInput: input.allowMemberTypeInput,
+        },
+      });
+      await audit({
+        resourceType: "SOCIETY",
+        resourceId: societyId,
+        action: before ? "update_public_member_form" : "create_public_member_form",
+        beforeJson: before as any,
+        afterJson: form as any,
+      });
+      return form;
+    },
+
     async listSocietyStaff() {
       return prisma.societyMember.findMany({
         where: { societyId },
