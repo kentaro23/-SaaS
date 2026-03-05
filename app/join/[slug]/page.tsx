@@ -62,7 +62,7 @@ export default async function JoinPage({
             <input name="givenName" required />
           </label>
           <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">かな（必須）</span>
+            <span className="font-medium text-slate-700">かな</span>
             <input name="kana" required />
           </label>
           <label className="grid gap-1 text-sm">

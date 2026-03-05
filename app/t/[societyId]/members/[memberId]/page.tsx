@@ -24,7 +24,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ s
           <InputRow label="会員番号" name="memberNo" required defaultValue={member.memberNo} />
           <InputRow label="姓" name="familyName" required defaultValue={member.familyName} />
           <InputRow label="名" name="givenName" required defaultValue={member.givenName} />
-          <InputRow label="かな（必須）" name="kana" required defaultValue={member.kana ?? ""} />
+          <InputRow label="かな" name="kana" required defaultValue={member.kana ?? ""} />
           <InputRow label="所属" name="affiliation" required defaultValue={member.affiliation} />
           <InputRow label="メール" name="email" type="email" required defaultValue={member.email} />
           <InputRow label="電話" name="phone" defaultValue={member.phone ?? ""} />

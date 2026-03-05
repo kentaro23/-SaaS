@@ -14,7 +14,7 @@ export default async function NewMemberPage({ params }: { params: Promise<{ soci
           <InputRow label="会員番号" name="memberNo" required />
           <InputRow label="姓" name="familyName" required />
           <InputRow label="名" name="givenName" required />
-          <InputRow label="かな（必須）" name="kana" required />
+          <InputRow label="かな" name="kana" required />
           <InputRow label="所属" name="affiliation" required />
           <InputRow label="メール" name="email" type="email" required />
           <InputRow label="電話" name="phone" />
