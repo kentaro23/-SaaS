@@ -35,3 +35,25 @@ export function renderTemplate(template: string, vars: Record<string, string | n
     return value === undefined || value === null ? "" : String(value);
   });
 }
+
+export function buildMemberFullName(familyName: string, givenName: string) {
+  return `${familyName.trim()} ${givenName.trim()}`.trim();
+}
+
+export function buildMemberAddress(input: {
+  postalCode: string;
+  prefecture: string;
+  city: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+}) {
+  const postal = input.postalCode.trim().replace(/^〒?/, "");
+  const parts = [
+    postal ? `〒${postal}` : "",
+    input.prefecture.trim(),
+    input.city.trim(),
+    input.addressLine1.trim(),
+    (input.addressLine2 ?? "").trim(),
+  ].filter(Boolean);
+  return parts.join(" ");
+}

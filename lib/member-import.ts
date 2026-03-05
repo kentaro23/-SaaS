@@ -1,8 +1,15 @@
 export type MemberCsvRow = {
   memberNo: string;
+  familyName: string;
+  givenName: string;
   name: string;
-  kana?: string | null;
+  kana: string;
   affiliation: string;
+  postalCode: string;
+  prefecture: string;
+  city: string;
+  addressLine1: string;
+  addressLine2?: string | null;
   address: string;
   email: string;
   phone?: string | null;
@@ -82,9 +89,16 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
   const headers = matrix[0].map((h) => h.trim());
   const index = {
     memberNo: findIndex(headers, ["memberNo", "member_no", "会員番号"]),
+    familyName: findIndex(headers, ["familyName", "family_name", "姓", "苗字"]),
+    givenName: findIndex(headers, ["givenName", "given_name", "名"]),
     name: findIndex(headers, ["name", "氏名"]),
     kana: findIndex(headers, ["kana", "かな", "カナ"]),
     affiliation: findIndex(headers, ["affiliation", "所属"]),
+    postalCode: findIndex(headers, ["postalCode", "postal_code", "郵便番号"]),
+    prefecture: findIndex(headers, ["prefecture", "都道府県"]),
+    city: findIndex(headers, ["city", "市区町村"]),
+    addressLine1: findIndex(headers, ["addressLine1", "address_line1", "番地", "住所1"]),
+    addressLine2: findIndex(headers, ["addressLine2", "address_line2", "建物名", "住所2"]),
     address: findIndex(headers, ["address", "住所"]),
     email: findIndex(headers, ["email", "メール", "emailAddress"]),
     phone: findIndex(headers, ["phone", "電話"]),
@@ -95,9 +109,24 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
     leftAt: findIndex(headers, ["leftAt", "left_at", "退会日"]),
   };
 
-  const required = [index.memberNo, index.name, index.affiliation, index.address, index.email, index.memberType, index.joinedAt];
-  if (required.some((i) => i < 0)) {
-    throw new Error("CSVヘッダー不足: memberNo,name,affiliation,address,email,memberType,joinedAt（または日本語ヘッダー）を含めてください");
+  const required = [
+    index.memberNo,
+    index.kana,
+    index.affiliation,
+    index.email,
+    index.memberType,
+    index.joinedAt,
+    index.postalCode,
+    index.prefecture,
+    index.city,
+    index.addressLine1,
+  ];
+  const hasSplitName = index.familyName >= 0 && index.givenName >= 0;
+  const hasLegacyName = index.name >= 0;
+  if (required.some((i) => i < 0) || (!hasSplitName && !hasLegacyName)) {
+    throw new Error(
+      "CSVヘッダー不足: memberNo,familyName,givenName,kana,affiliation,postalCode,prefecture,city,addressLine1,email,memberType,joinedAt（または legacy name）を含めてください",
+    );
   }
 
   const rows: MemberCsvRow[] = [];
@@ -106,28 +135,65 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
   for (let i = 1; i < matrix.length; i += 1) {
     const r = matrix[i];
     const memberNo = pick(r, index.memberNo);
+    const familyName = pick(r, index.familyName);
+    const givenName = pick(r, index.givenName);
     const name = pick(r, index.name);
+    const resolvedFamilyName = familyName || name.split(/\s+/)[0] || "";
+    const resolvedGivenName =
+      givenName || (name.includes(" ") ? name.split(/\s+/).slice(1).join(" ") : "");
     const affiliation = pick(r, index.affiliation);
+    const postalCode = pick(r, index.postalCode);
+    const prefecture = pick(r, index.prefecture);
+    const city = pick(r, index.city);
+    const addressLine1 = pick(r, index.addressLine1);
+    const addressLine2 = pick(r, index.addressLine2) || null;
     const address = pick(r, index.address);
+    const resolvedName = `${resolvedFamilyName} ${resolvedGivenName}`.trim() || name;
+    const resolvedAddress =
+      [postalCode ? `〒${postalCode.replace(/^〒?/, "")}` : "", prefecture, city, addressLine1, addressLine2]
+        .filter(Boolean)
+        .join(" ") || address;
     const email = pick(r, index.email);
     const memberType = pick(r, index.memberType);
+    const kana = pick(r, index.kana);
     const joinedAt = parseDateOrNull(pick(r, index.joinedAt));
 
-    if (!memberNo && !name && !email) {
+    if (!memberNo && !resolvedName && !email) {
       skipped += 1;
       continue;
     }
-    if (!memberNo || !name || !affiliation || !address || !email || !memberType || !joinedAt) {
+    if (
+      !memberNo ||
+      !resolvedFamilyName ||
+      !resolvedGivenName ||
+      !kana ||
+      !affiliation ||
+      !postalCode ||
+      !prefecture ||
+      !city ||
+      !addressLine1 ||
+      !resolvedAddress ||
+      !email ||
+      !memberType ||
+      !joinedAt
+    ) {
       skipped += 1;
       continue;
     }
 
     rows.push({
       memberNo,
-      name,
-      kana: pick(r, index.kana) || null,
+      familyName: resolvedFamilyName,
+      givenName: resolvedGivenName,
+      name: resolvedName,
+      kana,
       affiliation,
-      address,
+      postalCode,
+      prefecture,
+      city,
+      addressLine1,
+      addressLine2,
+      address: resolvedAddress,
       email,
       phone: pick(r, index.phone) || null,
       memberType,

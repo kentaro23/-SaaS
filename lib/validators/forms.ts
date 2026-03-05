@@ -26,10 +26,15 @@ export const societyPlanSchema = z.object({
 
 export const memberSchema = z.object({
   memberNo: z.string().min(1),
-  name: z.string().min(1),
-  kana: z.string().optional().nullable(),
+  familyName: z.string().min(1),
+  givenName: z.string().min(1),
+  kana: z.string().min(1),
   affiliation: z.string().min(1),
-  address: z.string().min(1),
+  postalCode: z.string().min(1),
+  prefecture: z.string().min(1),
+  city: z.string().min(1),
+  addressLine1: z.string().min(1),
+  addressLine2: z.string().optional().nullable(),
   email: z.string().email(),
   phone: z.string().optional().nullable(),
   memberType: z.string().min(1),
@@ -154,10 +159,15 @@ export const publicMemberFormSchema = z.object({
 });
 
 export const publicMemberRegistrationSchema = z.object({
-  name: z.string().min(1),
-  kana: z.string().optional().nullable(),
+  familyName: z.string().min(1),
+  givenName: z.string().min(1),
+  kana: z.string().min(1),
   affiliation: z.string().min(1),
-  address: z.string().min(1),
+  postalCode: z.string().min(1),
+  prefecture: z.string().min(1),
+  city: z.string().min(1),
+  addressLine1: z.string().min(1),
+  addressLine2: z.string().optional().nullable(),
   email: z.string().email(),
   phone: z.string().optional().nullable(),
   memberType: z.string().optional().nullable(),

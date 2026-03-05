@@ -91,7 +91,7 @@ export default async function MembersPage({
           </div>
         </form>
         <p className="mt-2 text-xs text-slate-500">
-          Excelで編集後にCSV保存してアップロードしてください。重複する会員番号は更新されます。
+          Excelで編集後にCSV保存してアップロードしてください（姓/名/かな/郵便番号/都道府県/市区町村/番地は必須）。重複する会員番号は更新されます。
           <a href="/member-import-template.csv" className="ml-2 underline">テンプレートCSVをダウンロード</a>
         </p>
       </Card>
@@ -158,7 +158,7 @@ export default async function MembersPage({
             {members.map((m) => (
               <tr key={m.id}>
                 <Td>{m.memberNo}</Td>
-                <Td><div className="font-medium">{m.name}</div><div className="text-xs text-slate-500">{m.kana || "-"}</div></Td>
+                <Td><div className="font-medium">{(m.familyName && m.givenName) ? `${m.familyName} ${m.givenName}` : m.name}</div><div className="text-xs text-slate-500">{m.kana || "-"}</div></Td>
                 <Td><div>{m.memberType}</div><div className="text-xs text-slate-500">{m.affiliation}</div></Td>
                 <Td><div>{m.email}</div><div className="text-xs text-slate-500">{m.phone || "-"}</div></Td>
                 <Td><StatusBadge tone={m.status === "ACTIVE" ? "green" : "slate"}>{memberStatusLabel(m.status)}</StatusBadge></Td>

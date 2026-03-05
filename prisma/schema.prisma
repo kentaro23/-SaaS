@@ -232,9 +232,16 @@ model Member {
   id          String       @id @default(cuid())
   societyId    String
   memberNo     String
+  familyName   String       @default("")
+  givenName    String       @default("")
   name         String
   kana         String?
   affiliation  String
+  postalCode   String       @default("")
+  prefecture   String       @default("")
+  city         String       @default("")
+  addressLine1 String       @default("")
+  addressLine2 String?
   address      String
   email        String
   phone        String?

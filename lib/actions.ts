@@ -13,6 +13,7 @@ import { getMailProvider } from "@/lib/mail";
 import { buildReceiptPdf } from "@/lib/receipt-pdf";
 import { getUploadBaseDir, ensureDir } from "@/lib/files";
 import { parseMemberCsvRows } from "@/lib/member-import";
+import { buildMemberAddress, buildMemberFullName } from "@/lib/utils";
 import {
   archiveSchema,
   annualInvoiceGenerateSchema,
@@ -219,7 +220,14 @@ export async function saveMemberAction(societyId: string, formData: FormData) {
   const id = formData.get("id") ? String(formData.get("id")) : undefined;
   const parsed = memberSchema.parse(formDataToObject(formData));
   const repo = createTenantRepo({ societyId, actorUserId: user.id });
-  await repo.upsertMember({ id, societyId, ...parsed } as any);
+  await repo.upsertMember({
+    id,
+    societyId,
+    ...parsed,
+    name: buildMemberFullName(parsed.familyName, parsed.givenName),
+    address: buildMemberAddress(parsed),
+    kana: parsed.kana.trim(),
+  } as any);
   revalidatePath(`/t/${societyId}/members`);
   if (id) revalidatePath(`/t/${societyId}/members/${id}`);
 }
@@ -243,9 +251,16 @@ export async function importMembersCsvAction(societyId: string, formData: FormDa
       id: existing?.id,
       societyId,
       memberNo: row.memberNo,
+      familyName: row.familyName,
+      givenName: row.givenName,
       name: row.name,
-      kana: row.kana ?? null,
+      kana: row.kana,
       affiliation: row.affiliation,
+      postalCode: row.postalCode,
+      prefecture: row.prefecture,
+      city: row.city,
+      addressLine1: row.addressLine1,
+      addressLine2: row.addressLine2 ?? null,
       address: row.address,
       email: row.email,
       phone: row.phone ?? null,
@@ -322,10 +337,23 @@ export async function submitPublicMemberRegistrationAction(slug: string, formDat
   await repo.upsertMember({
     societyId: form.societyId,
     memberNo,
-    name: row.name.trim(),
-    kana: nullableText(row.kana),
+    familyName: row.familyName.trim(),
+    givenName: row.givenName.trim(),
+    name: buildMemberFullName(row.familyName, row.givenName),
+    kana: row.kana.trim(),
     affiliation: row.affiliation.trim(),
-    address: row.address.trim(),
+    postalCode: row.postalCode.trim(),
+    prefecture: row.prefecture.trim(),
+    city: row.city.trim(),
+    addressLine1: row.addressLine1.trim(),
+    addressLine2: nullableText(row.addressLine2),
+    address: buildMemberAddress({
+      postalCode: row.postalCode,
+      prefecture: row.prefecture,
+      city: row.city,
+      addressLine1: row.addressLine1,
+      addressLine2: row.addressLine2,
+    }),
     email: row.email.trim(),
     phone: nullableText(row.phone),
     memberType,

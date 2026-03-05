@@ -18,9 +18,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ society
   const csv = toCsv(
     members.map((m) => ({
       memberNo: m.memberNo,
+      familyName: m.familyName,
+      givenName: m.givenName,
       name: m.name,
       kana: m.kana ?? "",
       affiliation: m.affiliation,
+      postalCode: m.postalCode,
+      prefecture: m.prefecture,
+      city: m.city,
+      addressLine1: m.addressLine1,
+      addressLine2: m.addressLine2 ?? "",
       address: m.address,
       email: m.email,
       phone: m.phone ?? "",

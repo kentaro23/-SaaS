@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { submitPublicMemberRegistrationAction } from "@/lib/actions";
+import { prefectureOptions } from "@/lib/labels";
 import { prisma } from "@/lib/prisma";
 
 const errorMessageMap: Record<string, string> = {
@@ -52,13 +53,17 @@ export default async function JoinPage({
         ) : null}
 
         <form action={submitPublicMemberRegistrationAction.bind(null, slug)} className="mt-6 grid gap-4 md:grid-cols-2">
-          <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">氏名</span>
-            <input name="name" required />
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-slate-700">姓</span>
+            <input name="familyName" required />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-slate-700">名</span>
+            <input name="givenName" required />
           </label>
           <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">かな（任意）</span>
-            <input name="kana" />
+            <span className="font-medium text-slate-700">かな（必須）</span>
+            <input name="kana" required />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium text-slate-700">所属</span>
@@ -69,8 +74,30 @@ export default async function JoinPage({
             <input name="email" type="email" required />
           </label>
           <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">住所</span>
-            <input name="address" required />
+            <span className="font-medium text-slate-700">郵便番号（ハイフンあり）</span>
+            <input name="postalCode" required placeholder="123-4567" />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-slate-700">都道府県</span>
+            <select name="prefecture" required defaultValue="東京都">
+              {prefectureOptions.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-slate-700">市区町村</span>
+            <input name="city" required />
+          </label>
+          <label className="grid gap-1 text-sm md:col-span-2">
+            <span className="font-medium text-slate-700">番地</span>
+            <input name="addressLine1" required />
+          </label>
+          <label className="grid gap-1 text-sm md:col-span-2">
+            <span className="font-medium text-slate-700">建物名・部屋番号（任意）</span>
+            <input name="addressLine2" />
           </label>
           <label className="grid gap-1 text-sm md:col-span-2">
             <span className="font-medium text-slate-700">電話番号（任意）</span>
