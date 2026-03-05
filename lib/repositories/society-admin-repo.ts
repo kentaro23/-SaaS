@@ -34,6 +34,14 @@ export function createSocietyAdminRepo(actorUserId?: string | null) {
       liaisonName?: string | null;
       liaisonEmail?: string | null;
       liaisonPhone?: string | null;
+      admissionFee?: number | null;
+      annualFee?: number | null;
+      bankName?: string | null;
+      bankBranch?: string | null;
+      bankAccountType?: string | null;
+      bankAccountNumber?: string | null;
+      bankAccountHolder?: string | null;
+      bankNote?: string | null;
       status: "ACTIVE" | "INACTIVE";
     }) {
       const society = await prisma.society.create({ data });
@@ -58,6 +66,14 @@ export function createSocietyAdminRepo(actorUserId?: string | null) {
       liaisonName?: string | null;
       liaisonEmail?: string | null;
       liaisonPhone?: string | null;
+      admissionFee?: number | null;
+      annualFee?: number | null;
+      bankName?: string | null;
+      bankBranch?: string | null;
+      bankAccountType?: string | null;
+      bankAccountNumber?: string | null;
+      bankAccountHolder?: string | null;
+      bankNote?: string | null;
       status: "ACTIVE" | "INACTIVE";
     }) {
       const before = await prisma.society.findUniqueOrThrow({ where: { id } });

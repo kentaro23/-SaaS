@@ -24,8 +24,7 @@ export function AppShell({
     [`${base}/meetings`, "会議"],
     [`${base}/archives`, "文書・発送"],
     [`${base}/shipments`, "発送履歴"],
-    [`${base}/settings/plan`, "設定: プラン"],
-    [`${base}/settings/mail`, "設定: メール送信"],
+    [`${base}/settings`, "学会設定"],
     [`${base}/settings/members`, "設定: 運営メンバー"],
     [`/admin/societies/${societyId}`, "詳細: 運営管理"],
   ] as const;

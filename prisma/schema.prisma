@@ -153,6 +153,14 @@ model Society {
   liaisonName   String?
   liaisonEmail  String?
   liaisonPhone  String?
+  admissionFee  Int?
+  annualFee     Int?
+  bankName      String?
+  bankBranch    String?
+  bankAccountType String?
+  bankAccountNumber String?
+  bankAccountHolder String?
+  bankNote      String?
   mailProvider  String            @default("smtp")
   mailFrom      String?
   smtpHost      String?

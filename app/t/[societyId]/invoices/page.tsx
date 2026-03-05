@@ -7,6 +7,7 @@ import {
   updateInvoiceReminderStageAction,
   upsertEmailTemplateAction,
 } from "@/lib/actions";
+import { InsertTemplateTextButton } from "@/components/forms/InsertTemplateTextButton";
 import { PageTitle, Card, Table, Th, Td, Button, StatusBadge } from "@/components/ui";
 import { invoiceStatusLabel, invoiceStatusOptions, paymentMethodOptions, reminderStageLabel, reminderStageOptions } from "@/lib/labels";
 import { presetsByCategory } from "@/lib/email-template-presets";
@@ -21,7 +22,7 @@ export default async function InvoicesPage({
 }) {
   const { societyId } = await params;
   const sp = await searchParams;
-  const { repo } = await getTenantContext(societyId, "READ_ONLY");
+  const { repo, society } = await getTenantContext(societyId, "READ_ONLY");
   const fiscalYear = sp.fiscalYear ? Number(sp.fiscalYear) : undefined;
   const status = sp.status ?? "ALL";
 
@@ -52,6 +53,17 @@ export default async function InvoicesPage({
       .filter((t) => t.key.startsWith("invoice_") && !presetTemplates.some((p) => p.key === t.key))
       .map((t) => ({ id: t.id, key: t.key, name: t.name, subject: t.subject, body: t.body })),
   ];
+  const bankSnippet = [
+    "【お振込先】",
+    `銀行名: ${society.bankName ?? ""}`,
+    `支店名: ${society.bankBranch ?? ""}`,
+    `口座種別: ${society.bankAccountType ?? ""}`,
+    `口座番号: ${society.bankAccountNumber ?? ""}`,
+    `口座名義: ${society.bankAccountHolder ?? ""}`,
+    society.bankNote ?? "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return (
     <div className="space-y-5">
@@ -202,7 +214,13 @@ export default async function InvoicesPage({
           <label className="grid gap-1 text-sm"><span>テンプレートキー（`invoice_` で開始）</span><input name="key" placeholder="invoice_annual_notice" required /></label>
           <label className="grid gap-1 text-sm"><span>表示名</span><input name="name" placeholder="年会費請求案内" required /></label>
           <label className="grid gap-1 text-sm"><span>件名</span><input name="subject" required /></label>
-          <label className="grid gap-1 text-sm"><span>本文</span><textarea name="body" rows={4} required /></label>
+          <label className="grid gap-1 text-sm">
+            <span>本文</span>
+            <textarea id="invoice-new-body" name="body" rows={4} required />
+          </label>
+          <div>
+            <InsertTemplateTextButton targetId="invoice-new-body" text={bankSnippet || "【お振込先】\n（学会設定で口座情報を登録してください）"} />
+          </div>
           <div><Button variant="secondary">追加</Button></div>
         </form>
         <div className="grid gap-4">
@@ -211,7 +229,16 @@ export default async function InvoicesPage({
               <input type="hidden" name="key" value={t.key} />
               <label className="grid gap-1 text-sm"><span>表示名</span><input name="name" defaultValue={t.name} required /></label>
               <label className="grid gap-1 text-sm"><span>件名</span><input name="subject" defaultValue={t.subject} required /></label>
-              <label className="grid gap-1 text-sm"><span>本文</span><textarea name="body" rows={6} defaultValue={t.body} required /></label>
+              <label className="grid gap-1 text-sm">
+                <span>本文</span>
+                <textarea id={`invoice-body-${t.key}`} name="body" rows={6} defaultValue={t.body} required />
+              </label>
+              <div>
+                <InsertTemplateTextButton
+                  targetId={`invoice-body-${t.key}`}
+                  text={bankSnippet || "【お振込先】\n（学会設定で口座情報を登録してください）"}
+                />
+              </div>
               <div className="text-xs text-slate-500">key: {t.key}</div>
               <div><Button variant="secondary">保存</Button></div>
             </form>

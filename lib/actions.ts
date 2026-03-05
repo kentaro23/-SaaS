@@ -33,6 +33,7 @@ import {
   societyMailSettingSchema,
   societyPlanSchema,
   societySchema,
+  societySettingsSchema,
   taskSchema,
 } from "@/lib/validators/forms";
 
@@ -56,6 +57,14 @@ function nullableText(v: unknown) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
   return s.length ? s : null;
+}
+
+function nullableInt(v: unknown) {
+  const s = nullableText(v);
+  if (!s) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.trunc(n));
 }
 
 async function nextPublicMemberNo(societyId: string) {
@@ -184,6 +193,30 @@ export async function saveSocietyMailSettingsAction(societyId: string, formData:
   const repo = createTenantRepo({ societyId, actorUserId: user.id });
   await repo.updateSocietyMailSettings(parsed as any);
   revalidatePath(`/t/${societyId}/settings/mail`);
+}
+
+export async function saveSocietySettingsAction(societyId: string, formData: FormData) {
+  const { user } = await requireSocietyAccess(societyId, "ADMIN");
+  const parsed = societySettingsSchema.parse(formDataToObject(formData));
+  const repo = createTenantRepo({ societyId, actorUserId: user.id });
+  await repo.updateSocietySettings({
+    ...parsed,
+    feeSystem: nullableText(parsed.feeSystem),
+    committeeFrequency: nullableText(parsed.committeeFrequency),
+    liaisonName: nullableText(parsed.liaisonName),
+    liaisonEmail: nullableText(parsed.liaisonEmail),
+    liaisonPhone: nullableText(parsed.liaisonPhone),
+    admissionFee: nullableInt(parsed.admissionFee),
+    annualFee: nullableInt(parsed.annualFee),
+    bankName: nullableText(parsed.bankName),
+    bankBranch: nullableText(parsed.bankBranch),
+    bankAccountType: nullableText(parsed.bankAccountType),
+    bankAccountNumber: nullableText(parsed.bankAccountNumber),
+    bankAccountHolder: nullableText(parsed.bankAccountHolder),
+    bankNote: nullableText(parsed.bankNote),
+  } as any);
+  revalidatePath(`/t/${societyId}/settings`);
+  revalidatePath(`/admin/societies/${societyId}`);
 }
 
 export async function sendMailSettingsTestAction(societyId: string, formData: FormData) {
@@ -367,7 +400,7 @@ export async function submitPublicMemberRegistrationAction(slug: string, formDat
     leftAt: null,
   });
   revalidatePath(`/t/${form.societyId}/members`);
-  redirect(`/join/${form.slug}?success=1`);
+  redirect(`/join/${form.slug}/completed`);
 }
 
 export async function generateAnnualInvoicesAction(societyId: string, formData: FormData) {

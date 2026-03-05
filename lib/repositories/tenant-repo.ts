@@ -16,6 +16,9 @@ export function createTenantRepo(ctx: TenantRepoContext) {
 
   return {
     societyId,
+    async getSociety() {
+      return prisma.society.findUnique({ where: { id: societyId } });
+    },
 
     async dashboardSummary() {
       const [memberCount, unpaidInvoices, meetingsUpcoming, shipmentCount] = await Promise.all([
@@ -438,16 +441,28 @@ export function createTenantRepo(ctx: TenantRepoContext) {
     }) {
       const template = await this.getEmailTemplate(input.templateKey);
       if (!template) throw new Error("テンプレートが見つかりません");
-      const targets = await this.listInvoiceEmailTargets(input);
+      const [targets, society] = await Promise.all([this.listInvoiceEmailTargets(input), this.getSociety()]);
+      const bankTransferInfo = [
+        "【お振込先】",
+        `銀行名: ${society?.bankName ?? ""}`,
+        `支店名: ${society?.bankBranch ?? ""}`,
+        `口座種別: ${society?.bankAccountType ?? ""}`,
+        `口座番号: ${society?.bankAccountNumber ?? ""}`,
+        `口座名義: ${society?.bankAccountHolder ?? ""}`,
+        society?.bankNote ?? "",
+      ]
+        .filter(Boolean)
+        .join("\n");
       return targets.slice(0, input.limit ?? 20).map((invoice) => {
         const vars = {
           memberName: invoice.member.name,
           memberNo: invoice.member.memberNo,
-          societyName: invoice.member.affiliation, // placeholder if society name hidden here
+          societyName: society?.name ?? "",
           fiscalYear: invoice.fiscalYear,
           invoiceAmount: invoice.amount,
           dueDate: invoice.dueDate.toISOString().slice(0, 10),
           invoiceStatus: invoice.status,
+          bankTransferInfo,
         };
         return {
           invoiceId: invoice.id,
@@ -520,6 +535,18 @@ export function createTenantRepo(ctx: TenantRepoContext) {
       const filter = (approval.filterJson ?? {}) as Record<string, any>;
       const template = await this.getEmailTemplate(approval.templateKey);
       if (!template) throw new Error("テンプレート未登録");
+      const society = await this.getSociety();
+      const bankTransferInfo = [
+        "【お振込先】",
+        `銀行名: ${society?.bankName ?? ""}`,
+        `支店名: ${society?.bankBranch ?? ""}`,
+        `口座種別: ${society?.bankAccountType ?? ""}`,
+        `口座番号: ${society?.bankAccountNumber ?? ""}`,
+        `口座名義: ${society?.bankAccountHolder ?? ""}`,
+        society?.bankNote ?? "",
+      ]
+        .filter(Boolean)
+        .join("\n");
       const targetScope = filter.targetScope === "MEMBER" ? "MEMBER" : "INVOICE";
 
       if (targetScope === "MEMBER") {
@@ -535,10 +562,12 @@ export function createTenantRepo(ctx: TenantRepoContext) {
           const vars = {
             memberName: member.name,
             memberNo: member.memberNo,
+            societyName: society?.name ?? "",
             fiscalYear: "",
             invoiceAmount: "",
             dueDate: "",
             invoiceStatus: "",
+            bankTransferInfo,
           };
           await prisma.emailSendLog.create({
             data: {
@@ -573,10 +602,12 @@ export function createTenantRepo(ctx: TenantRepoContext) {
         const vars = {
           memberName: invoice.member.name,
           memberNo: invoice.member.memberNo,
+          societyName: society?.name ?? "",
           fiscalYear: invoice.fiscalYear,
           invoiceAmount: invoice.amount,
           dueDate: invoice.dueDate.toISOString().slice(0, 10),
           invoiceStatus: invoice.status,
+          bankTransferInfo,
         };
         await prisma.emailSendLog.create({
           data: {
@@ -714,6 +745,60 @@ export function createTenantRepo(ctx: TenantRepoContext) {
         resourceType: "SOCIETY",
         resourceId: society.id,
         action: "update_mail_settings",
+        beforeJson: before as any,
+        afterJson: society as any,
+      });
+      return society;
+    },
+
+    async updateSocietySettings(input: {
+      name: string;
+      shortName: string;
+      contactEmail: string;
+      billingEmail: string;
+      feeSystem?: string | null;
+      committeeFrequency?: string | null;
+      liaisonName?: string | null;
+      liaisonEmail?: string | null;
+      liaisonPhone?: string | null;
+      admissionFee?: number | null;
+      annualFee?: number | null;
+      bankName?: string | null;
+      bankBranch?: string | null;
+      bankAccountType?: string | null;
+      bankAccountNumber?: string | null;
+      bankAccountHolder?: string | null;
+      bankNote?: string | null;
+      status: "ACTIVE" | "INACTIVE";
+    }) {
+      const before = await prisma.society.findUniqueOrThrow({ where: { id: societyId } });
+      const society = await prisma.society.update({
+        where: { id: societyId },
+        data: {
+          name: input.name,
+          shortName: input.shortName,
+          contactEmail: input.contactEmail,
+          billingEmail: input.billingEmail,
+          feeSystem: input.feeSystem ?? null,
+          committeeFrequency: input.committeeFrequency ?? null,
+          liaisonName: input.liaisonName ?? null,
+          liaisonEmail: input.liaisonEmail ?? null,
+          liaisonPhone: input.liaisonPhone ?? null,
+          admissionFee: input.admissionFee ?? null,
+          annualFee: input.annualFee ?? null,
+          bankName: input.bankName ?? null,
+          bankBranch: input.bankBranch ?? null,
+          bankAccountType: input.bankAccountType ?? null,
+          bankAccountNumber: input.bankAccountNumber ?? null,
+          bankAccountHolder: input.bankAccountHolder ?? null,
+          bankNote: input.bankNote ?? null,
+          status: input.status,
+        },
+      });
+      await audit({
+        resourceType: "SOCIETY",
+        resourceId: societyId,
+        action: "update_society_settings",
         beforeJson: before as any,
         afterJson: society as any,
       });
