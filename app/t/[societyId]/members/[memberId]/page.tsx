@@ -3,7 +3,8 @@ import { getTenantContext } from "@/lib/tenant";
 import { saveMemberAction } from "@/lib/actions";
 import { PageTitle, Card, InputRow, SelectRow, Button, Table, Th, Td, StatusBadge } from "@/components/ui";
 import { AuditLogPanel } from "@/components/AuditLogPanel";
-import { invoiceStatusLabel, prefectureOptions, societyStatusOptions } from "@/lib/labels";
+import { AddressFields } from "@/components/forms/AddressFields";
+import { invoiceStatusLabel, societyStatusOptions } from "@/lib/labels";
 import { formatCurrencyJPY, formatDate, toDateInput } from "@/lib/utils";
 
 export default async function MemberDetailPage({ params }: { params: Promise<{ societyId: string; memberId: string }> }) {
@@ -11,6 +12,9 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ s
   const { repo } = await getTenantContext(societyId, "READ_ONLY");
   const member = await repo.getMember(memberId);
   if (!member) notFound();
+  const legacyKanaParts = (member.kana ?? "").trim().split(/\s+/).filter(Boolean);
+  const defaultKanaFamily = member.kanaFamily || legacyKanaParts[0] || "";
+  const defaultKanaGiven = member.kanaGiven || legacyKanaParts.slice(1).join(" ") || "";
   const logs = (await repo.latestAuditLogs(50)).filter((l) => l.resourceType === "MEMBER" && l.resourceId === memberId).slice(0, 20);
 
   const action = saveMemberAction.bind(null, societyId);
@@ -24,7 +28,8 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ s
           <InputRow label="会員番号" name="memberNo" required defaultValue={member.memberNo} />
           <InputRow label="姓" name="familyName" required defaultValue={member.familyName} />
           <InputRow label="名" name="givenName" required defaultValue={member.givenName} />
-          <InputRow label="かな" name="kana" required defaultValue={member.kana ?? ""} />
+          <InputRow label="姓かな" name="kanaFamily" required defaultValue={defaultKanaFamily} />
+          <InputRow label="名かな" name="kanaGiven" required defaultValue={defaultKanaGiven} />
           <InputRow label="所属" name="affiliation" required defaultValue={member.affiliation} />
           <InputRow label="メール" name="email" type="email" required defaultValue={member.email} />
           <InputRow label="電話" name="phone" defaultValue={member.phone ?? ""} />
@@ -33,23 +38,13 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ s
           <SelectRow label="状態" name="status" defaultValue={member.status} options={societyStatusOptions} />
           <InputRow label="入会日" name="joinedAt" type="date" required defaultValue={toDateInput(member.joinedAt)} />
           <InputRow label="退会日" name="leftAt" type="date" defaultValue={toDateInput(member.leftAt)} />
-          <InputRow label="郵便番号（ハイフンあり）" name="postalCode" required defaultValue={member.postalCode} />
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-slate-700">都道府県</span>
-            <select name="prefecture" required defaultValue={member.prefecture || "東京都"}>
-              {prefectureOptions.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <InputRow label="市区町村" name="city" required defaultValue={member.city} />
-          <InputRow label="番地" name="addressLine1" required defaultValue={member.addressLine1} />
-          <label className="md:col-span-2 grid gap-1 text-sm">
-            <span className="font-medium text-slate-700">建物名・部屋番号（任意）</span>
-            <input name="addressLine2" defaultValue={member.addressLine2 ?? ""} />
-          </label>
+          <AddressFields
+            postalCodeDefault={member.postalCode}
+            prefectureDefault={member.prefecture || "東京都"}
+            cityDefault={member.city}
+            addressLine1Default={member.addressLine1}
+            addressLine2Default={member.addressLine2 ?? ""}
+          />
           <div className="md:col-span-2"><Button>更新</Button></div>
         </form>
       </Card>

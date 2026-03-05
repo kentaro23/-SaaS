@@ -234,6 +234,8 @@ model Member {
   memberNo     String
   familyName   String       @default("")
   givenName    String       @default("")
+  kanaFamily   String       @default("")
+  kanaGiven    String       @default("")
   name         String
   kana         String?
   affiliation  String

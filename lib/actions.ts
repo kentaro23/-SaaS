@@ -13,7 +13,7 @@ import { getMailProvider } from "@/lib/mail";
 import { buildReceiptPdf } from "@/lib/receipt-pdf";
 import { getUploadBaseDir, ensureDir } from "@/lib/files";
 import { parseMemberCsvRows } from "@/lib/member-import";
-import { buildMemberAddress, buildMemberFullName } from "@/lib/utils";
+import { buildMemberAddress, buildMemberFullName, buildMemberKana } from "@/lib/utils";
 import {
   archiveSchema,
   annualInvoiceGenerateSchema,
@@ -225,8 +225,8 @@ export async function saveMemberAction(societyId: string, formData: FormData) {
     societyId,
     ...parsed,
     name: buildMemberFullName(parsed.familyName, parsed.givenName),
+    kana: buildMemberKana(parsed.kanaFamily, parsed.kanaGiven),
     address: buildMemberAddress(parsed),
-    kana: parsed.kana.trim(),
   } as any);
   revalidatePath(`/t/${societyId}/members`);
   if (id) revalidatePath(`/t/${societyId}/members/${id}`);
@@ -253,6 +253,8 @@ export async function importMembersCsvAction(societyId: string, formData: FormDa
       memberNo: row.memberNo,
       familyName: row.familyName,
       givenName: row.givenName,
+      kanaFamily: row.kanaFamily,
+      kanaGiven: row.kanaGiven,
       name: row.name,
       kana: row.kana,
       affiliation: row.affiliation,
@@ -339,8 +341,10 @@ export async function submitPublicMemberRegistrationAction(slug: string, formDat
     memberNo,
     familyName: row.familyName.trim(),
     givenName: row.givenName.trim(),
+    kanaFamily: row.kanaFamily.trim(),
+    kanaGiven: row.kanaGiven.trim(),
     name: buildMemberFullName(row.familyName, row.givenName),
-    kana: row.kana.trim(),
+    kana: buildMemberKana(row.kanaFamily, row.kanaGiven),
     affiliation: row.affiliation.trim(),
     postalCode: row.postalCode.trim(),
     prefecture: row.prefecture.trim(),

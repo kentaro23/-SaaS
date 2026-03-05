@@ -20,6 +20,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ society
       memberNo: m.memberNo,
       familyName: m.familyName,
       givenName: m.givenName,
+      kanaFamily: m.kanaFamily,
+      kanaGiven: m.kanaGiven,
       name: m.name,
       kana: m.kana ?? "",
       affiliation: m.affiliation,

@@ -40,6 +40,10 @@ export function buildMemberFullName(familyName: string, givenName: string) {
   return `${familyName.trim()} ${givenName.trim()}`.trim();
 }
 
+export function buildMemberKana(kanaFamily: string, kanaGiven: string) {
+  return `${kanaFamily.trim()} ${kanaGiven.trim()}`.trim();
+}
+
 export function buildMemberAddress(input: {
   postalCode: string;
   prefecture: string;

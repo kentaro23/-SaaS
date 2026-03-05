@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { saveMemberAction } from "@/lib/actions";
 import { Card, PageTitle, InputRow, SelectRow, Button } from "@/components/ui";
-import { prefectureOptions, societyStatusOptions } from "@/lib/labels";
+import { AddressFields } from "@/components/forms/AddressFields";
+import { societyStatusOptions } from "@/lib/labels";
 
 export default async function NewMemberPage({ params }: { params: Promise<{ societyId: string }> }) {
   const { societyId } = await params;
@@ -14,7 +15,8 @@ export default async function NewMemberPage({ params }: { params: Promise<{ soci
           <InputRow label="会員番号" name="memberNo" required />
           <InputRow label="姓" name="familyName" required />
           <InputRow label="名" name="givenName" required />
-          <InputRow label="かな" name="kana" required />
+          <InputRow label="姓かな" name="kanaFamily" required />
+          <InputRow label="名かな" name="kanaGiven" required />
           <InputRow label="所属" name="affiliation" required />
           <InputRow label="メール" name="email" type="email" required />
           <InputRow label="電話" name="phone" />
@@ -22,23 +24,7 @@ export default async function NewMemberPage({ params }: { params: Promise<{ soci
           <InputRow label="役職" name="position" />
           <SelectRow label="状態" name="status" defaultValue="ACTIVE" options={societyStatusOptions} />
           <InputRow label="入会日" name="joinedAt" type="date" required />
-          <InputRow label="郵便番号（ハイフンあり）" name="postalCode" required placeholder="123-4567" />
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-slate-700">都道府県</span>
-            <select name="prefecture" required defaultValue="東京都">
-              {prefectureOptions.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <InputRow label="市区町村" name="city" required />
-          <InputRow label="番地" name="addressLine1" required />
-          <label className="md:col-span-2 grid gap-1 text-sm">
-            <span className="font-medium text-slate-700">建物名・部屋番号（任意）</span>
-            <input name="addressLine2" />
-          </label>
+          <AddressFields />
           <div className="md:col-span-2"><Button>保存</Button></div>
         </form>
       </Card>

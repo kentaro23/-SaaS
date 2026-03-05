@@ -1,1 +1,1 @@
-memberNo,familyName,givenName,kana,affiliation,postalCode,prefecture,city,addressLine1,addressLine2,email,phone,memberType,position,status,joinedAt,leftAt
+memberNo,familyName,givenName,kanaFamily,kanaGiven,affiliation,postalCode,prefecture,city,addressLine1,addressLine2,email,phone,memberType,position,status,joinedAt,leftAt

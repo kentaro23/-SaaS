@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { submitPublicMemberRegistrationAction } from "@/lib/actions";
-import { prefectureOptions } from "@/lib/labels";
+import { AddressFields } from "@/components/forms/AddressFields";
 import { prisma } from "@/lib/prisma";
 
 const errorMessageMap: Record<string, string> = {
@@ -61,9 +61,13 @@ export default async function JoinPage({
             <span className="font-medium text-slate-700">名</span>
             <input name="givenName" required />
           </label>
-          <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">かな</span>
-            <input name="kana" required />
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-slate-700">姓かな</span>
+            <input name="kanaFamily" required />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium text-slate-700">名かな</span>
+            <input name="kanaGiven" required />
           </label>
           <label className="grid gap-1 text-sm">
             <span className="font-medium text-slate-700">所属</span>
@@ -73,32 +77,7 @@ export default async function JoinPage({
             <span className="font-medium text-slate-700">メールアドレス</span>
             <input name="email" type="email" required />
           </label>
-          <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">郵便番号（ハイフンあり）</span>
-            <input name="postalCode" required placeholder="123-4567" />
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-slate-700">都道府県</span>
-            <select name="prefecture" required defaultValue="東京都">
-              {prefectureOptions.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-slate-700">市区町村</span>
-            <input name="city" required />
-          </label>
-          <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">番地</span>
-            <input name="addressLine1" required />
-          </label>
-          <label className="grid gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">建物名・部屋番号（任意）</span>
-            <input name="addressLine2" />
-          </label>
+          <AddressFields />
           <label className="grid gap-1 text-sm md:col-span-2">
             <span className="font-medium text-slate-700">電話番号（任意）</span>
             <input name="phone" />

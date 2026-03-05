@@ -2,6 +2,8 @@ export type MemberCsvRow = {
   memberNo: string;
   familyName: string;
   givenName: string;
+  kanaFamily: string;
+  kanaGiven: string;
   name: string;
   kana: string;
   affiliation: string;
@@ -91,6 +93,8 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
     memberNo: findIndex(headers, ["memberNo", "member_no", "会員番号"]),
     familyName: findIndex(headers, ["familyName", "family_name", "姓", "苗字"]),
     givenName: findIndex(headers, ["givenName", "given_name", "名"]),
+    kanaFamily: findIndex(headers, ["kanaFamily", "kana_family", "セイ", "姓かな"]),
+    kanaGiven: findIndex(headers, ["kanaGiven", "kana_given", "メイ", "名かな"]),
     name: findIndex(headers, ["name", "氏名"]),
     kana: findIndex(headers, ["kana", "かな", "カナ"]),
     affiliation: findIndex(headers, ["affiliation", "所属"]),
@@ -111,7 +115,6 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
 
   const required = [
     index.memberNo,
-    index.kana,
     index.affiliation,
     index.email,
     index.memberType,
@@ -123,9 +126,15 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
   ];
   const hasSplitName = index.familyName >= 0 && index.givenName >= 0;
   const hasLegacyName = index.name >= 0;
-  if (required.some((i) => i < 0) || (!hasSplitName && !hasLegacyName)) {
+  const hasSplitKana = index.kanaFamily >= 0 && index.kanaGiven >= 0;
+  const hasLegacyKana = index.kana >= 0;
+  if (
+    required.some((i) => i < 0) ||
+    (!hasSplitName && !hasLegacyName) ||
+    (!hasSplitKana && !hasLegacyKana)
+  ) {
     throw new Error(
-      "CSVヘッダー不足: memberNo,familyName,givenName,kana,affiliation,postalCode,prefecture,city,addressLine1,email,memberType,joinedAt（または legacy name）を含めてください",
+      "CSVヘッダー不足: memberNo,familyName,givenName,kanaFamily,kanaGiven,affiliation,postalCode,prefecture,city,addressLine1,email,memberType,joinedAt を含めてください",
     );
   }
 
@@ -141,6 +150,12 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
     const resolvedFamilyName = familyName || name.split(/\s+/)[0] || "";
     const resolvedGivenName =
       givenName || (name.includes(" ") ? name.split(/\s+/).slice(1).join(" ") : "");
+    const kanaFamily = pick(r, index.kanaFamily);
+    const kanaGiven = pick(r, index.kanaGiven);
+    const kana = pick(r, index.kana);
+    const resolvedKanaFamily = kanaFamily || kana.split(/\s+/)[0] || "";
+    const resolvedKanaGiven =
+      kanaGiven || (kana.includes(" ") ? kana.split(/\s+/).slice(1).join(" ") : "");
     const affiliation = pick(r, index.affiliation);
     const postalCode = pick(r, index.postalCode);
     const prefecture = pick(r, index.prefecture);
@@ -155,7 +170,6 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
         .join(" ") || address;
     const email = pick(r, index.email);
     const memberType = pick(r, index.memberType);
-    const kana = pick(r, index.kana);
     const joinedAt = parseDateOrNull(pick(r, index.joinedAt));
 
     if (!memberNo && !resolvedName && !email) {
@@ -166,7 +180,8 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
       !memberNo ||
       !resolvedFamilyName ||
       !resolvedGivenName ||
-      !kana ||
+      !resolvedKanaFamily ||
+      !resolvedKanaGiven ||
       !affiliation ||
       !postalCode ||
       !prefecture ||
@@ -185,8 +200,10 @@ export function parseMemberCsvRows(csvText: string): { rows: MemberCsvRow[]; ski
       memberNo,
       familyName: resolvedFamilyName,
       givenName: resolvedGivenName,
+      kanaFamily: resolvedKanaFamily,
+      kanaGiven: resolvedKanaGiven,
       name: resolvedName,
-      kana,
+      kana: `${resolvedKanaFamily} ${resolvedKanaGiven}`.trim(),
       affiliation,
       postalCode,
       prefecture,
