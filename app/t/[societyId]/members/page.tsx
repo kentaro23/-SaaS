@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getTenantContext } from "@/lib/tenant";
 import { importMembersCsvAction, savePublicMemberFormAction } from "@/lib/actions";
 import { hasRole } from "@/lib/authz";
@@ -36,6 +37,11 @@ export default async function MembersPage({
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || societyId.slice(0, 8);
   const publicJoinUrl = `/join/${publicForm?.slug ?? defaultSlug}`;
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const origin = process.env.NEXT_PUBLIC_APP_URL?.trim() || (host ? `${proto}://${host}` : "");
+  const publicJoinAbsoluteUrl = origin ? `${origin}${publicJoinUrl}` : publicJoinUrl;
 
   return (
     <div className="space-y-5">
@@ -133,9 +139,17 @@ export default async function MembersPage({
             )}
           </div>
         </form>
-        <p className="mt-3 text-xs text-slate-500">
-          公開フォーム: <a href={publicJoinUrl} target="_blank" rel="noreferrer" className="underline">{publicJoinUrl}</a>
-        </p>
+        {publicForm?.enabled ? (
+          <div className="mt-3 grid gap-1 text-xs text-slate-500">
+            <span>公開中URL（学会HP掲載用）</span>
+            <input readOnly value={publicJoinAbsoluteUrl} className="bg-slate-50 font-mono text-xs" />
+            <a href={publicJoinUrl} target="_blank" rel="noreferrer" className="underline">
+              別タブで公開フォームを開く
+            </a>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-slate-500">フォームを有効化すると公開URLが表示されます。</p>
+        )}
       </Card>
       <Card>
         <Table>
